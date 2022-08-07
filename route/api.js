@@ -1,0 +1,3813 @@
+//All node modules
+// Main module
+const __path = process.cwd();
+const axios = require("axios");
+const fetch = require("node-fetch");
+const fs = require("fs");
+const express = require("express");
+const eru = express.Router();
+const canvafy = require("canvafy");
+//external module
+const ytdl = require("ytdl-core");
+const yts = require("yt-search");
+const { promisify } = require("util");
+const thiccysapi = require("@phaticusthiccy/open-apis");
+const bt = require("@bochilteam/scraper");
+const Artbreeder = new thiccysapi.Artbreeder(5, "all");
+const { Brainly } = require("brainly-scraper-v2");
+const brain = new Brainly("id");
+const _gis = require("g-i-s");
+const gis = promisify(_gis);
+const malScraper = require("mal-scraper");
+const Scathach = require("scathach-api");
+const hentai = new Scathach();
+const gplay = require("google-play-scraper");
+const { OtakudesuInstance } = require("otakudesu-scraper");
+const otakudesu = new OtakudesuInstance();
+const knights = require("knights-canvas");
+const DIG = require("discord-image-generation");
+const fietu = require("fietu");
+const { CanvasSenpai } = require("canvas-senpai");
+const canva = new CanvasSenpai();
+const far = require("xfarr-api");
+const ShortUrl = require("../lib/utils/short");
+const { cerpen, chara } = require("../lib/utils/scrape");
+const { text } = require("cherio/lib/static");
+const Pageres = require("pageres");
+const urlExist = require("url-exist");
+
+//=========================================Random===========================================\\
+eru.get("/random/cerpen", async (req, res) => {
+  try {
+    cerpen("", async (text) => {
+      res.json({
+        result: text,
+      });
+    });
+  } catch (err) {
+    res.json({
+      error: err.message,
+    });
+  }
+});
+
+eru.get("/random/quotes", (req, res) => {
+  const quote = fs.readFileSync("./lib/json/quote.json");
+  const datas = JSON.parse(quote);
+  const result = pickRandom(datas);
+  res.json({
+    by: result.author,
+    quotes: result.quotes,
+  });
+});
+eru.get("/tes", (req, res) => {
+  far.anime
+    .character("kato megumi")
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+
+  // chara("kato megumi")
+  //   .then((data) => {
+  //     res.json(data);
+  //   })
+  //   .catch((err) => {
+  //     res.json({
+  //       error: err.message,
+  //     });
+  //   });
+});
+// =======================================================Sementara==========================================================
+
+eru.get("/anime/wait", async (req, res) => {
+  if (!req.query.url)
+    return res.json({
+      error: "URL tidak ditemukan",
+    });
+  await fetch(`https://api.trace.moe/search?anilistInfo&url=${req.query.url}`)
+    .then((response) => response.json())
+    .then((data) => {
+      const datas = data.result;
+      const result = datas.map((item) => {
+        return {
+          title: item.anilist.title.romaji,
+          title_english: item.anilist.title.english,
+          episode: item.episode,
+          similarity: item.similarity,
+          image: item.image,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "URL tidak ditemukan",
+      });
+    });
+});
+// ==============================================Selesai tes=============================\\
+
+// ===============================================information============================\\
+// minecraft server
+eru.get("/information/java", async (req, res) => {
+  await fetch(`https://api.mcsrvstat.us/2/${req.query.ip}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.online == false)
+        return res.json({ ip: req.query.ip, status: "Offline" });
+      const result = {
+        ip: req.query.ip,
+        hostname: data.hostname,
+        version: data.version,
+        online: data.players.online,
+        max: data.players.max,
+        icon: `https://api.mcsrvstat.us/icon/${req.query.ip}`,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+eru.get("/information/bedrock", async (req, res) => {
+  await fetch(`https://api.mcsrvstat.us/bedrock/2/${req.query.ip}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.online == false)
+        return res.json({ ip: req.query.ip, status: "Offline" });
+      const result = {
+        ip: req.query.ip,
+        port: data.port,
+        gamemode: data.gamemode,
+        version: data.version,
+        online: data.players.online,
+        max: data.players.max,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+//otakudesu
+eru.get("/information/otakudesu", async (req, res) => {
+  otakudesu
+    .getAnime(req.query.q)
+    .then((data) => {
+      if (!req.query.q) return res.json({ error: "Masukan querynya" });
+      const result = data.map((item) => {
+        return {
+          Name: item.name,
+          Image: item.image,
+          Genre: item.meta.genres.join(","),
+          Status: item.meta.status,
+          Rating: item.meta.rating,
+        };
+      });
+      if (!result.length) return res.json({ error: "Anime tidak ditemukan" });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+// yt
+
+eru.get("/information/yts", async (req, res) => {
+  if (!req.query.q)
+    return res.json({
+      Error: "Masukan Query",
+    });
+  await yts(req.query.q)
+    .then((data) => {
+      const videos = data.videos.slice();
+      const result = videos.map((item) => {
+        return {
+          Title: item.title,
+          Views: item.views,
+          Author: item.author.name,
+          Duration: item.duration.timestamp,
+          Publish: item.ago,
+          Thumbnail: item.thumbnail,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+// myanimelist
+
+eru.get("/information/animeseason", async (req, res) => {
+  if ((!req.query.tahun, !req.query.season))
+    return res.json({ error: "Masukan parameter yang benar" });
+  malScraper
+    .getSeason(req.query.tahun, req.query.season)
+    .then((data) => {
+      const tv = data.TV;
+      const result = tv.map((item) => {
+        return {
+          title: item.title,
+          image: item.picture,
+          score: item.score,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+// stalker
+
+eru.get("/information/malstalk", async (req, res) => {
+  malScraper
+    .getWatchListFromUser(req.query.name, "anime")
+    .then((data) => {
+      if (!req.query.q)
+        return res.json({ error: "Masukan parameter yang benar" });
+      const result = data.map((item) => {
+        const genres = item.genres
+          .map((genre) => {
+            return genre.name;
+          })
+          .join(",");
+        if (item.numWatchedEpisodes == item.animeNumEpisodes)
+          return {
+            Title: item.animeTitle,
+            TitleEng: item.animeTitleEng,
+            Type: item.animeMediaTypeString,
+            Genres: genres,
+            Watch: "Finished watching by user",
+            WatchEpisode: item.numWatchedEpisodes,
+            TotalEpisode: item.animeNumEpisodes,
+            ScoreGiven: item.score,
+            Image: item.animeImagePath,
+          };
+        if (item.numWatchedEpisodes !== item.animeNumEpisodes)
+          return {
+            Title: item.animeTitle,
+            Title_eng: item.animeTitleEng,
+            Type: item.animeMediaTypeString,
+            Genres: genres,
+            Watch: "Curently watching by user",
+            Watch_episode: item.numWatchedEpisodes,
+            Total_episode: item.animeNumEpisodes,
+            Score_given: item.score,
+            Image: item.animeImagePath,
+          };
+      });
+      if (!result.length) return res.json({ error: "User tidak ditemukan" });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "User tidak ditemukan",
+      });
+    });
+});
+
+eru.get("/information/gitstalk", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan nama" });
+  thiccysapi
+    .github_user(req.query.name)
+    .then((data) => {
+      const languages = data.languages.most_used_languages
+        .map((item) => {
+          return item.language;
+        })
+        .join(", ");
+      const result = {
+        Username: data.user.username,
+        Name: data.user.name,
+        Bio: data.user.bio,
+        Followers: data.user.followers,
+        Following: data.user.following,
+        Created: data.user.created_at,
+        Avatar: data.user.avatar,
+        Repositories: data.user.repositories,
+        Used_space: data.repositories.used_space,
+        languages,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.redirect(`/information/gitstalk2?${req.query.name}`);
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/information/gitstalk2", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan nama" });
+  fetch(`https://api.github.com/users/${req.query.name}`)
+    .then((response) => response.json())
+    .then((data) => {
+      const result = {
+        Name: data.login,
+        Avatar: data.avatar_url,
+        Url: data.html_url,
+        Bio: data.bio,
+        Repos: data.public_repos,
+        Created: data.created_at,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/information/igstalk", async (req, res) => {
+  thiccysapi
+    .insta_profile("levi.std")
+    .then((data) => {
+      if (!req.query.name) return res.json({ error: "Masukan username" });
+      const result = data.map((item) => {
+        return {
+          Name: item.username,
+          Image: item.profile_pic_url,
+          Followers: item.followers,
+          Following: item.following,
+          Post: item.post_count,
+        };
+      });
+      if (!result.length) return res.json({ error: "User tidak ditemukan" });
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+      console.log(err);
+    });
+});
+//brainly
+eru.get("/information/brainly", async (req, res) => {
+  brain
+    .search(req.query.q)
+    .then((data) => {
+      const datas = pickRandom(data);
+      const result = datas.answers.map((item) => {
+        if ((!datas.question.attachments.length, !item.attachments.length))
+          return {
+            Pertanyaan: datas.question.content,
+            Jawaban: item.content,
+          };
+        if (datas.question.attachments.length && item.attachments.length)
+          return {
+            Pertanyaan: datas.question.content,
+            Attachment: datas.question.attachments,
+            Jawaban: item.content,
+            Jawaban_img: item.attachments,
+          };
+        if (datas.question.attachments.length && !item.attachments.length)
+          return {
+            Pertanyaan: datas.question.content,
+            Attachment: datas.question.attachments,
+            Jawaban: item.content,
+          };
+        if (!datas.question.attachments.length && item.attachments.length)
+          return {
+            Pertanyaan: datas.question.content,
+            Jawaban: item.content,
+            Jawaban_img: item.attachments,
+          };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        message: err.message,
+      });
+    });
+});
+// Movie
+eru.get("/information/bioskopNow", async (req, res) => {
+  bt.bioskopNow()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/bioskop", async (req, res) => {
+  bt.bioskop()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+// News
+eru.get("/information/liputan6", async (req, res) => {
+  bt.liputan6()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/cnbindonesia", async (req, res) => {
+  bt.cnbindonesia()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/antaranews", async (req, res) => {
+  bt.antaranews()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/kompas", async (req, res) => {
+  bt.kompas()
+    .then((data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+// jadwal
+eru.get("/information/jadwalsholat", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  bt.jadwalsholat(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+// Playstore
+eru.get("/information/playstore", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  gplay
+    .search({
+      term: req.query.q,
+      lang: "id",
+      num: 2,
+    })
+    .then((data) => {
+      result = data.map((item) => {
+        return {
+          Title: item.title,
+          Developer: item.developer,
+          appId: item.appId,
+          price: item.price,
+          icon: item.icon,
+          score: item.score,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+// Cuaca
+
+eru.get("/information/cuaca", async (req, res) => {
+  if (!req.query.lokasi) return res.json({ error: "Masukan lokasinya" });
+  await fetch(
+    `https:/api.weatherapi.com/v1/forecast.json?key=a5a6bc21da734aa495f15121220207&q=${req.query.lokasi}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) return res.json({ error: "Lokasi tidak di temukan" });
+      const { name, region, country } = data.location;
+      const { temp_c, wind_mph, humidity, feelslike_c } = data.current;
+      const { text } = data.current.condition;
+      res.json({
+        lokasi: name,
+        provinsi: region,
+        negara: country,
+        suhu: `${temp_c}°C`,
+        kecepatanAngin: `${wind_mph} m/s`,
+        kelembapan: `${humidity}%`,
+        TerasaSeperti: `${feelslike_c}°C`,
+        kondisi: text,
+      });
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+// Covid
+eru.get("/information/covid", async (req, res) => {
+  fetch("https://data.covid19.go.id/public/api/update.json")
+    .then((response) => response.json())
+    .then((data) => {
+      const { jumlah_odp, jumlah_pdp, total_spesimen, total_spesimen_negatif } =
+        data.data;
+      const {
+        jumlah_positif,
+        jumlah_meninggal,
+        jumlah_sembuh,
+        jumlah_dirawat,
+      } = data.update.penambahan;
+      const {
+        jumlah_positif: jumlah_positif2,
+        jumlah_dirawat: jumlah_dirawat2,
+        jumlah_sembuh: jumlah_sembuh2,
+        jumlah_meninggal: jumlah_meninggal2,
+      } = data.update.total;
+      res.json({
+        jumlah_odp,
+        jumlah_pdp,
+        total_spesimen,
+        total_spesimen_negatif,
+        jumlah_positif,
+        jumlah_dirawat,
+        jumlah_sembuh,
+        jumlah_meninggal,
+        total_positif: jumlah_positif2,
+        total_dirawat: jumlah_dirawat2,
+        total_sembuh: jumlah_sembuh2,
+        total_meninggal: jumlah_meninggal2,
+      });
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+//==============================================================Text Maker=========================================\\
+// attp && ttp
+eru.get("/textmaker/ttp", async (req, res) => {
+  if (!req.query.text) return res.json({ error: "No text" });
+  far.maker
+    .ttp(req.query.text)
+    .then(async (data) => {
+      const result = await getBuffer(data.result);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/textmaker/attp", async (req, res) => {
+  if (!req.query.text) return res.json({ error: "No text" });
+  far.maker
+    .attp(req.query.text)
+    .then(async (data) => {
+      const result = await getBuffer(data.result);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+// Text pro
+eru.get("/textpro/devilwings", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-neon-devil-wings-text-effect-online-free-1014.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/orange", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-3d-orange-juice-text-effect-online-1084.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/valentine", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-realistic-golden-text-effect-on-red-sparkles-online-1082.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/blackpink", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-neon-light-blackpink-logo-text-effect-online-1081.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/blackpink2", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-blackpink-logo-decorated-with-roses-online-free-1080.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/bussines-sign", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-business-sign-text-effect-1078.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/diamond", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-quick-sparkling-diamonds-text-effect-1077.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/golden", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/free-creative-3d-golden-text-effect-online-1075.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/carved", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-carved-stone-text-effect-online-1074.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/stone", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-3d-stone-text-effect-online-for-free-1073.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/glass", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-style-glass-text-effect-online-1072.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/luxury", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-3d-luxury-metallic-text-effect-for-free-1071.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/white-gold", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/elegant-white-gold-3d-text-effect-online-free-1070.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/girrafe", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-giraffe-text-effect-online-1069.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/arcane", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-text-effects-arcane-tv-series-online-1067.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/batman", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/make-a-batman-logo-online-free-1066.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/circle-neon", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-neon-light-on-brick-wall-online-1062.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/neon-light", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-glowing-neon-light-text-effect-online-free-1061.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/ancient", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-golden-ancient-text-effect-online-free-1060.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/led-display", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/color-led-display-screen-text-effect-1059.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/neon-display", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-gradient-neon-light-text-effect-online-1085.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/summer-beach", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-summer-text-effect-with-a-palm-tree-1083.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/summer-time", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-summer-neon-light-text-effect-online-1076.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/sliced-text", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-light-glow-sliced-text-effect-online-1068.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/neon-glitch", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/neon-light-glitch-text-generator-online-1063.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/christmas-tree", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/christmas-tree-text-effect-online-free-1057.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/candy", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-christmas-candy-cane-text-effect-1056.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-christmas", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-christmas-text-effect-by-name-1055.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/sparkle-christmas", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/sparkles-merry-christmas-text-effect-1054.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-deepsea", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-deep-sea-metal-text-effect-online-1053.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/america", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-american-flag-3d-text-effect-online-1051.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/future", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-sci-fi-text-effect-online-1050.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-rainbow", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-rainbow-color-calligraphy-text-effect-1049.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-pipe", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-water-pipe-text-effects-online-1048.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/pencil", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-sketch-text-effect-online-1044.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/blue-circuit", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-blue-circuit-style-text-effect-online-1043.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/space", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-space-text-effects-online-free-1042.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/metallic", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-metallic-text-effect-free-online-1041.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/fiction", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-science-fiction-text-effect-online-free-1038.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/demon", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-green-horror-style-text-effect-online-1036.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/transformer", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-transformer-text-effect-online-1035.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/berry", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-berry-text-effect-online-free-1033.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/thunder", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/online-thunder-text-effect-generator-1031.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/magma", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-magma-hot-text-effect-online-1030.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-stone", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-stone-cracked-cool-text-effect-1029.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-neon", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-neon-light-text-effect-online-1028.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/glitch", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-impressive-glitch-text-effects-online-1027.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/neon", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-futuristic-technology-neon-light-text-effect-1006.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/snow-effect", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-snow-text-effects-for-winter-holidays-1005.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/cloud", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-cloud-text-effect-on-the-sky-online-1004.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/sand", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/write-in-sand-summer-beach-free-online-991.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/sand2", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/sand-writing-text-effect-online-990.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-sand", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/sand-engraved-3d-text-effect-989.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/sand3", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-summery-sand-writing-text-effect-988.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-glue", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-3d-glue-text-effect-with-realistic-style-986.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/metal-dark", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/metal-dark-gold-text-effect-984.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/1917", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/1917-style-text-effect-online-980.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/minion", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/minion-text-effect-3d-online-978.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/holographic", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/holographic-3d-text-effect-975.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/textpro/metal-purple", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/metal-purple-dual-effect-973.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/deluxe-silver", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/deluxe-silver-text-effect-970.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/break-wall", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/break-wall-text-effect-871.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/honey", async (req, res) => {
+  thiccysapi
+    .textpro("https://textpro.me/honey-text-effect-868.html", req.query.text)
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/dropwater", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/dropwater-text-effect-872.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/horor-blood", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/horror-blood-text-effect-online-883.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/toxic", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/toxic-text-effect-online-901.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/equalizer", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/rainbow-equalizer-text-effect-902.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-underwater", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/3d-underwater-text-effect-generator-online-1013.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-paper", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/online-multicolor-3d-paper-cut-text-effect-1016.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/water-color", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-free-online-watercolor-text-effect-1017.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-metal", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-a-3d-glossy-metal-text-effect-1019.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/broken-glass", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/broken-glass-text-effect-free-online-1023.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/3d-gradient", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/online-3d-gradient-text-effect-generator-1020.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/art-paper", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-art-paper-cut-text-effect-online-1022.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+eru.get("/textpro/embossed", async (req, res) => {
+  thiccysapi
+    .textpro(
+      "https://textpro.me/create-embossed-text-effect-on-cracked-surface-1024.html",
+      req.query.text
+    )
+    .then(async (data) => {
+      const result = await getBuffer(data);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: "error",
+        message: "masukan textnya",
+        error: err.message,
+      });
+    });
+});
+
+// ==================================================MAKER==================================================\\
+eru.get("/canvas/tweet", async (req, res) => {
+  try {
+    if ((!req.query.avatar, !req.query.name, !req.query.text))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const tweet = await new fietu.Tweet()
+      .setAvatar(req.query.avatar)
+      .setUsername(req.query.name)
+      .setNickname(req.query.name)
+      .setText(req.query.text)
+      .render();
+    const img = Buffer.from(tweet, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      error: e.message,
+    });
+  }
+});
+eru.get("/canvas/blur", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Blur().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: "Gambar tidak ada",
+      error: e.message,
+    });
+  }
+});
+
+eru.get("/canvas/gay", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Gay().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/greyscale", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Greyscale().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/invert", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Invert().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/sepia", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Sepia().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/triggered", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Triggered().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/ad", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Ad().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/batslap", async (req, res) => {
+  try {
+    if ((!req.query.image_url, !req.query.image_url2))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Batslap().getImage(
+      req.query.image_url,
+      req.query.image_url2
+    );
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/beautiful", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Beautiful().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/bed", async (req, res) => {
+  try {
+    if ((!req.query.image_url, !req.query.image_url2))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Bed().getImage(
+      req.query.image_url,
+      req.query.image_url2
+    );
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/paint", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Bobross().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/stonk", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.ConfusedStonk().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/delete", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Delete().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/doublestonk", async (req, res) => {
+  try {
+    if ((!req.query.image_url, !req.query.image_url2))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.DoubleStonk().getImage(
+      req.query.image_url,
+      req.query.image_url2
+    );
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/facepalm", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Facepalm().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/hitler", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Hitler().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/jail", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Jail().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Karaba", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Karaba().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Kiss", async (req, res) => {
+  try {
+    if ((!req.query.image_url, !req.query.image_url2))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Kiss().getImage(
+      req.query.image_url,
+      req.query.image_url2
+    );
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Mms", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Mms().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/NotStonk", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.NotStonk().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Poutine", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Poutine().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Rip", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Rip().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Spank", async (req, res) => {
+  try {
+    if ((!req.query.image_url, !req.query.image_url2))
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Spank().getImage(
+      req.query.image_url,
+      req.query.image_url2
+    );
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Tatoo", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Tatoo().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Thomas", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Thomas().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Trash", async (req, res) => {
+  try {
+    if (!req.query.image_url)
+      return res.json({
+        error: "Masukan parameter yang benar",
+      });
+    const result = await new DIG.Trash().getImage(req.query.image_url);
+    const img = Buffer.from(result, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": img.length,
+    });
+    res.end(img);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/Rank3", async (req, res) => {
+  try {
+    if (
+      (!req.query.name,
+      !req.query.level,
+      !req.query.rank,
+      !req.query.currentXP,
+      !req.query.fullXP,
+      !req.query.image_url)
+    )
+      return res.json({ error: "Masukan parameter yang benar" });
+    const data = await canva.rankcard({
+      link: "https://i.pinimg.com/originals/76/0e/d7/760ed7f52c90870503762ac92db92adc.jpg",
+      name: req.query.name,
+      discriminator: " ",
+      level: req.query.level,
+      rank: req.query.rank,
+      currentXP: req.query.currentXP,
+      fullXP: req.query.fullXP,
+      avatar: req.query.image_url,
+    });
+
+    await fs.writeFileSync(__path + "canvas.png", data);
+    res.sendFile(__path + "canvas.png");
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/welcome5", async (req, res) => {
+  try {
+    const image = await new knights.Welcome()
+      .setUsername(req.query.username)
+      .setGuildName(req.query.groupname)
+      .setGuildIcon(req.query.groupicon)
+      .setMemberCount(req.query.membercount)
+      .setAvatar(req.query.avatar)
+      .setBackground(req.query.background)
+      .toAttachment();
+    const data = image.toBuffer();
+    await fs.writeFileSync(__path + "/tmp/welcome.png", data);
+    res.sendFile(__path + "/tmp/welcome.png");
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+const bg = [
+  "https://cdn.discordapp.com/attachments/724098180989879072/724098180989879072.png",
+];
+
+eru.get("/canvas/welcome2", async (req, res) => {
+  try {
+    if (
+      (!req.query.username,
+      !req.query.groupname,
+      !req.query.membercount,
+      !req.query.avatar,
+      !req.query.background,
+      !req.query.groupicon)
+    )
+      return res.json({ error: "Masukan " });
+    const image = await new knights.Welcome()
+      .setUsername(req.query.username)
+      .setGuildName(req.query.groupname)
+      .setGuildIcon(req.query.groupicon)
+      .setMemberCount(req.query.membercount)
+      .setAvatar(req.query.avatar)
+      .setBackground(req.query.background)
+      .toAttachment();
+    data = image.toBuffer();
+    await fs.writeFileSync(__path + "/tmp/welcome.png", data);
+    res.sendFile(__path + "/tmp/welcome.png");
+  } catch (e) {
+    console.log(e);
+    res.json({
+      status: "error",
+      message: "Ada params yang kosong",
+      error: e.message,
+    });
+  }
+});
+//welcome
+eru.get("/canvas/welcome", async (req, res) => {
+  if ((!req.query.desk, !req.query.avatar, !req.query.gcname))
+    return res.json({ error: "Masukan query yang benar" });
+  try {
+    const welcome = await new canvafy.WelcomeLeave()
+      .setAvatar(req.query.avatar)
+      .setBackground(
+        "image",
+        "https://th.bing.com/th/id/R.248b992f15fb255621fa51ee0ca0cecb?rik=K8hIsVFACWQ8%2fw&pid=ImgRaw&r=0"
+      )
+      .setTitle(req.query.gcname)
+      .setDescription(req.query.desk)
+      .setBorder("#2a2e35")
+      .setAvatarBorder("#2a2e35")
+      .setOverlayOpacity(0.3)
+      .build();
+    const data = welcome.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+//leave
+
+eru.get("/canvas/leave", async (req, res) => {
+  if ((!req.query.desk, !req.query.avatar, !req.query.gcname))
+    return res.json({ error: "Masukan query yang benar" });
+  try {
+    const welcome = await new canvafy.WelcomeLeave()
+      .setAvatar(req.query.avatar)
+      .setBackground(
+        "image",
+        "https://th.bing.com/th/id/R.248b992f15fb255621fa51ee0ca0cecb?rik=K8hIsVFACWQ8%2fw&pid=ImgRaw&r=0"
+      )
+      .setTitle(req.query.gcname)
+      .setDescription(req.query.desk)
+      .setBorder("#2a2e35")
+      .setAvatarBorder("#2a2e35")
+      .setOverlayOpacity(0.3)
+      .build();
+    const data = welcome.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+//rank
+eru.get("/canvas/rank", async (req, res) => {
+  if (
+    (!req.query.name,
+    !req.query.avatar,
+    !req.query.needxp,
+    !req.query.currxp,
+    !req.query.level)
+  )
+    return res.json({ error: "Masukan query yang benar" });
+  try {
+    const image = await new knights.Rank()
+      .setAvatar(req.query.avatar)
+      .setUsername(req.query.name)
+      .setBg("https://i.ibb.co/4YBNyvP/images-76.jpg")
+      .setNeedxp(req.query.needxp)
+      .setCurrxp(req.query.currxp)
+      .setLevel(req.query.level)
+      .setRank("https://i.ibb.co/Wn9cvnv/FABLED.png")
+      .toAttachment();
+    const data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+// eru.get("/canvas/rank2", async (req, res) => {
+//   if (
+//     //   !req.query.name,
+//     // !req.query.avatar,
+//     // !req.query.needxp,
+//     // !req.query.currxp,
+//     // !req.query.level,
+//     !req.query.rank
+//   )
+//     return res.json({ error: "Masukan query" });
+//   try {
+//     const ranka = req.query.rank;
+//     const rank = await new canvafy.Rank()
+//       .setAvatar(req.query.avatar)
+//       .setBackground(
+//         "image",
+//         "https://th.bing.com/th/id/R.248b992f15fb255621fa51ee0ca0cecb?rik=K8hIsVFACWQ8%2fw&pid=ImgRaw&r=0"
+//       )
+//       .setUsername(req.query.name)
+//       .setStatus("online")
+//       .setLevel(7)
+//       .setRank(")
+//       .setCurrentXp(700)
+//       .setRequiredXp(1000)
+//       .build();
+//     const data = rank.toBuffer();
+//     res.setHeader("Content-Type", "image/png");
+//     res.send(data);
+//   } catch (e) {
+//     res.json({ error: e.message });
+//   }
+// });
+
+// effect
+eru.get("/canvas/affect", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    const affect = await canvafy.Image.affect(req.query.url);
+    const data = affect.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/levelup", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Up().setAvatar(req.query.url).toAttachment();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/hornycard", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Horny().setAvatar(req.query.url).toBuild();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/jojocard", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Jo().setImage(req.query.url).toBuild();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/patrick", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Patrick()
+      .setAvatar(req.query.url)
+      .toAttachment();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/bonk", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Bonk()
+      .setAvatar1(req.query.url)
+      .setAvatar2(req.query.url2)
+      .toBuild();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+eru.get("/canvas/burn", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  try {
+    var image = await new knights.Burn()
+      .setAvatar(req.query.url)
+      .toAttachment();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+//===================================================Download===================================================\\
+// yt
+eru.get("/download/ytmp3", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "URL tidak ada" });
+  await ytdl
+    .getInfo(req.query.url)
+    .then((data) => {
+      const datas = data.formats;
+      const title =
+        data.player_response.microformat.playerMicroformatRenderer.title
+          .simpleText;
+      const channel =
+        data.player_response.microformat.playerMicroformatRenderer
+          .ownerChannelName;
+      const thumb =
+        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+          .thumbnails[0].url;
+      const audio = [];
+      for (let i = 0; i < datas.length; i++) {
+        if (datas[i].mimeType == 'audio/webm; codecs="opus"') {
+          let aud = datas[i];
+          audio.push(aud.url);
+        }
+      }
+      const result = {
+        title,
+        channel,
+        thumb,
+        url: audio[1],
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/ytmp4", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "URL tidak ada" });
+  await ytdl
+    .getInfo(req.query.url)
+    .then(async (data) => {
+      const datas = data.formats;
+      const title =
+        data.player_response.microformat.playerMicroformatRenderer.title
+          .simpleText;
+      const thumb =
+        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+          .thumbnails[0].url;
+      const channel =
+        data.player_response.microformat.playerMicroformatRenderer
+          .ownerChannelName;
+      const video = [];
+      for (let i = 0; i < datas.length; i++) {
+        if (
+          datas[i].container == "mp4" &&
+          datas[i].hasVideo == true &&
+          datas[i].hasAudio == true
+        ) {
+          let vid = datas[i];
+          video.push(vid.url);
+        }
+      }
+      const vid = video[0];
+      const short = await fetch(
+        `http://localhost:3000/short/create?url=${vid}`
+      ).then((res) => res.json());
+      const result = {
+        title,
+        channel,
+        thumb,
+        video: vid,
+        short: short.link,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/ytmp4-2", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  thiccysapi
+    .insta_post(req.query.url)
+    .then(async (data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/play", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "No query" });
+  await yts(req.query.q)
+    .then(async (data) => {
+      const url = data.videos[0].url;
+      const video = ytdl.getInfo(url);
+      const datas = video.formats;
+      const thumb =
+        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+          .thumbnails[0].url;
+      const title =
+        video.player_response.microformat.playerMicroformatRenderer.title
+          .simpleText;
+      const channel =
+        video.player_response.microformat.playerMicroformatRenderer
+          .ownerChannelName;
+      const audio = [];
+      for (let i = 0; i < datas.length; i++) {
+        if (datas[i].mimeType == 'audio/webm; codecs="opus"') {
+          const aud = datas[i];
+          audio.push(aud.url);
+        }
+      }
+      const result = {
+        title,
+        channel,
+        thumb,
+        url: audio[1],
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/playmp4", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "No query" });
+  await yts(req.query.q)
+    .then(async (data) => {
+      const url = data.videos[0].url;
+      const mp4 = await ytdl.getInfo(url);
+      const datas = mp4.formats;
+      const title =
+        mp4.player_response.microformat.playerMicroformatRenderer.title
+          .simpleText;
+      const thumb =
+        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+          .thumbnails[0].url;
+      const channel =
+        mp4.player_response.microformat.playerMicroformatRenderer
+          .ownerChannelName;
+      const video = [];
+      for (let i = 0; i < datas.length; i++) {
+        if (
+          datas[i].container == "mp4" &&
+          datas[i].hasVideo == true &&
+          datas[i].hasAudio == true
+        ) {
+          const vid = datas[i];
+          video.push(vid.url);
+        }
+      }
+      const result = {
+        title,
+        channel,
+        thumb,
+        url: video[0],
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+// tiktok
+eru.get("/download/tiktok", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  thiccysapi
+    .tiktok(req.query.url)
+    .then((data) => {
+      res.json(data.server1);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "URL tidak valid",
+      });
+    });
+});
+eru.get("/download/tiktok2", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  far.downloader
+    .tiktok(req.query.url)
+    .then((data) => {
+      const result = data.media.map((item) => {
+        return {
+          title: data.title,
+          url: item.url,
+          quality: item.quality,
+          extension: item.extension,
+        };
+      });
+
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "URL tidak valid",
+      });
+    });
+});
+eru.get("/download/tiktok3", async (req, res) => {
+  bt.tiktokdl(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "URL tidak valid",
+      });
+    });
+});
+// ig
+eru.get("/download/ig", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  thiccysapi
+    .insta_post(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/ig2", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+
+  far.downloader
+    .instagram(req.query.url)
+    .then(async (data) => {
+      const a = data.media;
+
+      const result = a.map((item) => {
+        return {
+          url: item.url,
+        };
+      });
+      // console.log(result);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/ig3", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  bt.instagramdl(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/igstory", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan username" });
+  bt.instagramStory(req.query.name)
+    .then((data) => {
+      const result = data.results.map((item) => {
+        return {
+          url: item.url,
+          type: item.type,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      console.log(err.message);
+      res.json({
+        message: "Username tidak valid atau tidak ada story",
+      });
+    });
+});
+eru.get("/download/igstory2", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan username" });
+  thiccysapi
+    .insta_story(req.query.name)
+    .then((data) => {
+      console.log(data);
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/download/igstory3", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan username" });
+});
+
+// fb
+eru.get("/download/fb", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  thiccysapi
+    .insta_post(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+// mediafire
+eru.get("/download/mediafire", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Url tidak ada" });
+  bt.mediafiredl(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+        message: "url tidak valid",
+      });
+    });
+});
+
+// aio
+eru.get("/download/savefrom", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Url tidak ada" });
+  bt.savefrom(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: "url tidak valid",
+        message: err.message,
+      });
+    });
+});
+// =============================================================END Download======================================= \\
+//===================================================================NSFW===========================================================\\
+
+eru.get("/h/hololive", async (req, res) => {
+  hentai
+    .getHololive()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/fgo", async (req, res) => {
+  hentai
+    .getFgo()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+eru.get("/h/genshin", async (req, res) => {
+  hentai
+    .getGenshin()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/azurlane", async (req, res) => {
+  hentai
+    .getAzur()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/arknights", async (req, res) => {
+  hentai
+    .getArknights()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/fireemblem", async (req, res) => {
+  hentai
+    .getFireEmblem()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/girlfrontline", async (req, res) => {
+  hentai
+    .getGirlsFrontline()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/kancolle", async (req, res) => {
+  hentai
+    .getKancolle()
+    .then(async (data) => {
+      const result = await getBuffer(data.image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+eru.get("/im/smug", async (req, res) => {
+  hentai
+    .getReaction("smug")
+    .then(async (data) => {
+      const result = await getBuffer(data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/h/rule34", async (req, res) => {
+  hentai
+    .searchR34(req.query.q)
+    .then(async (data) => {
+      image = pickRandom(data.clean_image);
+      const result = await getBuffer(image);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+//===================================================================End NSFW===========================================================\\
+// ===================================================================Game===========================================================\\
+eru.get("/game/tebakgame", (req, res) => {
+  const quote = fs.readFileSync("./lib/json/tebakgame.json");
+  const datas = JSON.parse(quote);
+  const result = pickRandom(datas);
+  res.json(result);
+});
+eru.get("/games/tebakgambar", async (req, res) => {
+  bt.tebakgambar()
+    .then((data) => {
+      const result = {
+        img: data.img,
+        jawaban: data.jawaban,
+        deskripsi: data.deskripsi,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/asahotak", async (req, res) => {
+  bt.asahotak()
+    .then((data) => {
+      const result = {
+        soal: data.soal,
+        jawaban: data.jawaban,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/caklontong", async (req, res) => {
+  bt.caklontong()
+    .then((data) => {
+      const { soal, jawaban, deskripsi } = data;
+      res.json({
+        soal,
+        jawaban,
+        deskripsi,
+      });
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/family100", async (req, res) => {
+  bt.family100()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/siapakahaku", async (req, res) => {
+  bt.siapakahaku()
+    .then((data) => {
+      const result = {
+        soal: data.soal,
+        jawaban: data.jawaban,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/susunkata", async (req, res) => {
+  bt.susunkata()
+    .then((data) => {
+      const result = {
+        soal: data.soal,
+        tipe: data.tipe,
+        jawaban: data.jawaban,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/games/tebakbendera2", async (req, res) => {
+  const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
+  const data = JSON.parse(bendera);
+  const result = pickRandom(data);
+  res.json(result);
+});
+
+eru.get("/games/tebakkimia", async (req, res) => {
+  bt.tebakkimia()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/games/tebakkata", async (req, res) => {
+  bt.tebakkata()
+    .then((data) => {
+      const result = {
+        soal: data.soal,
+        jawaban: data.jawaban,
+      };
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/games/tebaklirik", async (req, res) => {
+  bt.tebaklirik()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/tebaktebakan", async (req, res) => {
+  bt.tebaktebakan()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/games/tekateki", async (req, res) => {
+  bt.tekateki()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+//===============================================Random Image====================================================================\\
+// Anime image
+eru.get("/image/sfw/:id", async (req, res) => {
+  await fetch(`https:/api.waifu.pics/sfw/${req.params.id}`)
+    .then((response) => response.json())
+    .then(async (data) => {
+      const result = await getBuffer(data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/image/nsfw/:id", async (req, res) => {
+  await fetch("https:/api.waifu.pics/nsfw/" + req.params.id)
+    .then((response) => response.json())
+    .then(async (data) => {
+      const result = await getBuffer(data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+// Google image
+eru.get("/image/gis", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  await gis(req.query.q)
+    .then(async (data) => {
+      const { url } = pickRandom(data);
+      const result = await getBuffer(url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/image/gis-json", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  await gis(req.query.q)
+    .then(async (data) => {
+      const result = pickRandom(data);
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/image/artbreader", async (req, res) => {
+  if (!req.query.q) return res.send("Masukkan query");
+  await Artbreeder.search(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/image/artbreaders", async (req, res) => {
+  await Artbreeder.random()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+
+// pinterest
+eru.get("/image/pinterest", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  await bt
+    .pinterest(req.query.q)
+    .then(async (data) => {
+      const result = await getBuffer(pickRandom(data));
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        message: err.message,
+      });
+    });
+});
+// sticker tele
+eru.get("/image/stickerTelegram", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  bt.stickerTelegram(req.query.q)
+    .then(async (data) => {
+      const result = pickRandom(data);
+      res.json({
+        title: result.title,
+        link: result.link,
+        sticker: result.stickers,
+      });
+    })
+    .catch((err) => {
+      res.json({
+        message: err.message,
+      });
+    });
+});
+//wallpaper
+eru.get("/image/wallpaper", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  bt.wallpaper(req.query.q)
+    .then(async (data) => {
+      const result = await getBuffer(pickRandom(data));
+      // res.setHeader("Content-Type", "image/png");
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        message: err.message,
+      });
+    });
+});
+eru.get("/image/wallpaper2", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  bt.wallpaperv2(req.query.q)
+    .then(async (data) => {
+      const result = await getBuffer(pickRandom(data));
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        message: err.message,
+      });
+    });
+});
+
+//===============================================End Random Image=============================\\
+//===============================================Tools=======================================\\
+eru.get("/tools/urlshort", async (req, res) => {
+  const check = await ShortUrl.findOne({ full: req.query.url });
+  if (!req.query.url)
+    return res.json({
+      error: "Masukan url",
+    });
+  else if (check)
+    return res.json({
+      link: `http://localhost:3000/short/${check.short}`,
+      id: check.short,
+    });
+  else {
+    const exist = await urlExist(req.query.url);
+    if (!exist) return res.json({ error: "URL tidak valid" });
+  }
+  const link = await ShortUrl.create({ full: req.query.url });
+  const result = {
+    link: `http://localhost:3000/short/${link.short}`,
+    id: link.short,
+  };
+  res.json(result);
+});
+
+eru.get("/tools/ssweb", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url" });
+  else {
+    const check = await urlExist(req.query.url);
+    if (!check) return res.json({ error: "URL tidak valid" });
+  }
+  try {
+    await new Pageres({ delay: 0, filename: "ssweb" })
+      .src(req.query.url, ["1366x768"], {
+        crop: true,
+      })
+      .dest(__path + "/tmp")
+      .run();
+    res.sendFile(__path + "/tmp/ssweb.png");
+  } catch (err) {
+    res.json({
+      error: err.message,
+    });
+  }
+});
+
+eru.get("/tools/sswebs", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url" });
+  else {
+    const check = await urlExist(req.query.url);
+    if (!check) return res.json({ error: "URL tidak valid" });
+  }
+  try {
+    await new Pageres({ delay: 0, filename: "ssweb" })
+      .src(req.query.url, ["iphone 7 plus"], {
+        crop: true,
+      })
+      .dest(__path + "/tmp")
+      .run();
+    res.sendFile(__path + "/tmp/ssweb.png");
+  } catch (err) {
+    res.json({
+      error: err.message,
+    });
+  }
+});
+
+eru.get("/tools/sswebhp", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan url" });
+  else {
+    const check = await urlExist(req.query.url);
+    if (!check) return res.json({ error: "URL tidak valid" });
+  }
+  try {
+    await new Pageres({ delay: 0, filename: "ssweb" })
+      .src(req.query.url, ["samsung galaxy note 10.1 (2014 edition) p600"], {
+        crop: true,
+      })
+      .dest(__path + "/tmp")
+      .run();
+    res.sendFile(__path + "/tmp/ssweb.png");
+  } catch (err) {
+    res.json({
+      error: err.message,
+    });
+  }
+});
+
+eru.get("/tools/shopee", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan query" });
+  try {
+    await new Pageres({ delay: 3, filename: "shopee" })
+      .src(
+        `https://shopee.co.id/search?keyword=${req.query.q}`,
+        ["1920x1080"],
+        {
+          crop: true,
+        }
+      )
+      .dest(__path + "/tmp")
+      .run();
+    res.sendFile(__path + "/tmp/shopee.png");
+  } catch (err) {
+    res.json({
+      error: err.message,
+    });
+  }
+});
+
+//===============================================End Tools=======================================\\
+
+eru.use(express.static(__path + "/public"));
+eru.use(function (req, res) {
+  res
+    .status(404)
+    .set("Content-Type", "text/html")
+    .sendFile(__path + "/views/404.html");
+});
+
+//Function dan Method
+const getBuffer = async (url, options) => {
+  try {
+    options ? options : {};
+    const res = await axios({
+      method: "get",
+      url,
+      headers: {
+        DNT: 1,
+        "Upgrade-Insecure-Request": 1,
+      },
+      ...options,
+      responseType: "arraybuffer",
+    });
+    return res.data;
+  } catch (e) {
+    console.log(`Error : ${e}`);
+  }
+};
+const pickRandom = (arr) => {
+  return arr[Math.floor(Math.random() * arr.length)];
+};
+
+module.exports = eru;
