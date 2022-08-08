@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const ShortUrl = require("../lib/utils/short");
 const eru = express();
 const urlExist = require("url-exist");
-
+const baseUrl = "http://localhost:3000";
 mongoose.connect(
   "mongodb+srv://andika:eAswHY3K9gd4ByNV@cluster0.plr9pio.mongodb.net/?retryWrites=true&w=majority",
   {
@@ -22,7 +22,7 @@ eru.get("/", async (req, res) => {
   const shortUrls = await ShortUrl.find();
   const id = shortUrls.map((url) => {
     return {
-      link: `http://localhost:3000/short/${url.short}`,
+      link: `${baseUrl}/short/${url.short}`,
       url: url.full,
       id: url.short,
     };
@@ -44,12 +44,12 @@ eru.get("/create", async (req, res) => {
   else if (!req.query.url) return res.send("Masukan url");
   else if (check)
     return res.json({
-      link: `http://localhost:3000/short/${check.short}`,
+      link: `${baseUrl}/short/${check.short}`,
       id: check.short,
     });
   const link = await ShortUrl.create({ full: req.query.url });
   const result = {
-    link: `http://localhost:3000/short/${link.short}`,
+    link: `${baseUrl}/short/${link.short}`,
     id: link.short,
   };
   res.json(result);

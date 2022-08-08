@@ -1,4 +1,8 @@
 //All node modules
+// Config
+
+const baseUrl = "http://localhost:3000";
+
 // Main module
 const __path = process.cwd();
 const axios = require("axios");
@@ -60,28 +64,7 @@ eru.get("/random/quotes", (req, res) => {
     quotes: result.quotes,
   });
 });
-eru.get("/tes", (req, res) => {
-  far.anime
-    .character("kato megumi")
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-      });
-    });
-
-  // chara("kato megumi")
-  //   .then((data) => {
-  //     res.json(data);
-  //   })
-  //   .catch((err) => {
-  //     res.json({
-  //       error: err.message,
-  //     });
-  //   });
-});
+eru.get("/tes", (req, res) => {});
 // =======================================================Sementara==========================================================
 
 eru.get("/anime/wait", async (req, res) => {
@@ -114,22 +97,46 @@ eru.get("/anime/wait", async (req, res) => {
 // ==============================================Selesai tes=============================\\
 
 // ===============================================information============================\\
+// npm
+
+// eru.get("/information/npmseacrh", async (req, res) => {
+//   // if (!req.query.q)
+//   //   return res.json({
+//   //     error: "Masuka query",
+//   //   });
+//   // thiccysapi
+//   //   .npm_module(req.query.q, 3, true)
+//   //   .then(async (data) => {
+//   //     res.json(data);
+//   //   })
+//   //   .catch((err) => {
+//   //     res.json({
+//   //       error: err.message,
+//   //     });
+//   //   });
+// });
 // minecraft server
 eru.get("/information/java", async (req, res) => {
+  if (!req.query.ip)
+    return res.json({
+      error: "Masukkan ip server",
+    });
   await fetch(`https://api.mcsrvstat.us/2/${req.query.ip}`)
     .then((response) => response.json())
     .then((data) => {
       if (data.online == false)
         return res.json({ ip: req.query.ip, status: "Offline" });
-      const result = {
-        ip: req.query.ip,
-        hostname: data.hostname,
-        version: data.version,
-        online: data.players.online,
-        max: data.players.max,
-        icon: `https://api.mcsrvstat.us/icon/${req.query.ip}`,
-      };
-      res.json(result);
+      else {
+        const result = {
+          ip: req.query.ip,
+          hostname: data.hostname,
+          version: data.version,
+          online: data.players.online,
+          max: data.players.max,
+          icon: `https://api.mcsrvstat.us/icon/${req.query.ip}`,
+        };
+        res.json(result);
+      }
     })
     .catch((err) => {
       res.json({ error: err.message });
@@ -137,20 +144,26 @@ eru.get("/information/java", async (req, res) => {
 });
 
 eru.get("/information/bedrock", async (req, res) => {
+  if (!req.query.ip)
+    return res.json({
+      error: "Masukkan ip server",
+    });
   await fetch(`https://api.mcsrvstat.us/bedrock/2/${req.query.ip}`)
     .then((response) => response.json())
     .then((data) => {
       if (data.online == false)
         return res.json({ ip: req.query.ip, status: "Offline" });
-      const result = {
-        ip: req.query.ip,
-        port: data.port,
-        gamemode: data.gamemode,
-        version: data.version,
-        online: data.players.online,
-        max: data.players.max,
-      };
-      res.json(result);
+      else {
+        const result = {
+          ip: req.query.ip,
+          port: data.port,
+          gamemode: data.gamemode,
+          version: data.version,
+          online: data.players.online,
+          max: data.players.max,
+        };
+        res.json(result);
+      }
     })
     .catch((err) => {
       res.json({ error: err.message });
@@ -159,10 +172,10 @@ eru.get("/information/bedrock", async (req, res) => {
 
 //otakudesu
 eru.get("/information/otakudesu", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan querynya" });
   otakudesu
     .getAnime(req.query.q)
     .then((data) => {
-      if (!req.query.q) return res.json({ error: "Masukan querynya" });
       const result = data.map((item) => {
         return {
           Name: item.name,
@@ -172,7 +185,8 @@ eru.get("/information/otakudesu", async (req, res) => {
           Rating: item.meta.rating,
         };
       });
-      if (!result.length) return res.json({ error: "Anime tidak ditemukan" });
+      if (result.length < 5)
+        return res.json({ error: "Anime tidak ditemukan" });
       res.json(result);
     })
     .catch((err) => {
@@ -212,10 +226,79 @@ eru.get("/information/yts", async (req, res) => {
 });
 
 // myanimelist
+eru.get("/information/anime", async (req, res) => {
+  if ((!req.query.q, !req.query.type))
+    return res.json({ error: "Masukan Query" });
+  else if (req.query.type == "full") {
+    malScraper
+      .getInfoFromName(req.query.q)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((err) => {
+        res.json({
+          error: err.message,
+        });
+      });
+  } else if (req.query.type == "simple") {
+    malScraper
+      .getInfoFromName(req.query.q)
+      .then((data) => {
+        const chara = data.characters.map((item) => {
+          return {
+            name: item.name,
+            image: item.picture,
+            role: item.role,
+          };
+        });
+        const result = {
+          title: data.title,
+          synopsis: data.synopsis,
+          image: data.picture,
+          characters: chara,
+        };
+        res.json(result);
+      })
+      .catch((err) => {
+        res.json({
+          error: err.message,
+        });
+      });
+  } else {
+    res.json({
+      error: "Invalid type",
+    });
+  }
+});
+
+eru.get("/information/malsearch", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  malScraper
+    .getResultsFromSearch(req.query.q)
+    .then((data) => {
+      const result = data.map((item) => {
+        return {
+          title: item.name,
+          image: item.image_url,
+          type: item.payload.media_type,
+          aired: item.payload.aired,
+          score: item.payload.score,
+          status: item.payload.status,
+        };
+      });
+      res.json(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
 
 eru.get("/information/animeseason", async (req, res) => {
   if ((!req.query.tahun, !req.query.season))
-    return res.json({ error: "Masukan parameter yang benar" });
+    return res.json({ error: "Masukan query tahun dan season" });
+
   malScraper
     .getSeason(req.query.tahun, req.query.season)
     .then((data) => {
@@ -237,11 +320,10 @@ eru.get("/information/animeseason", async (req, res) => {
 // stalker
 
 eru.get("/information/malstalk", async (req, res) => {
+  if (!req.query.name) return res.json({ error: "Masukan namanya" });
   malScraper
     .getWatchListFromUser(req.query.name, "anime")
     .then((data) => {
-      if (!req.query.q)
-        return res.json({ error: "Masukan parameter yang benar" });
       const result = data.map((item) => {
         const genres = item.genres
           .map((genre) => {
@@ -401,7 +483,7 @@ eru.get("/information/brainly", async (req, res) => {
     });
 });
 // Movie
-eru.get("/information/bioskopNow", async (req, res) => {
+eru.get("/information/bioskopnow", async (req, res) => {
   bt.bioskopNow()
     .then((data) => {
       const result = pickRandom(data);
@@ -583,7 +665,7 @@ eru.get("/information/covid", async (req, res) => {
 
 //==============================================================Text Maker=========================================\\
 // attp && ttp
-eru.get("/textmaker/ttp", async (req, res) => {
+eru.get("/textpro/ttp", async (req, res) => {
   if (!req.query.text) return res.json({ error: "No text" });
   far.maker
     .ttp(req.query.text)
@@ -598,7 +680,7 @@ eru.get("/textmaker/ttp", async (req, res) => {
       });
     });
 });
-eru.get("/textmaker/attp", async (req, res) => {
+eru.get("/textpro/attp", async (req, res) => {
   if (!req.query.text) return res.json({ error: "No text" });
   far.maker
     .attp(req.query.text)
@@ -2052,11 +2134,8 @@ eru.get("/canvas/tweet", async (req, res) => {
       .setText(req.query.text)
       .render();
     const img = Buffer.from(tweet, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2072,11 +2151,8 @@ eru.get("/canvas/blur", async (req, res) => {
       });
     const result = await new DIG.Blur().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2094,11 +2170,8 @@ eru.get("/canvas/gay", async (req, res) => {
       });
     const result = await new DIG.Gay().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2114,11 +2187,8 @@ eru.get("/canvas/greyscale", async (req, res) => {
       });
     const result = await new DIG.Greyscale().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2134,11 +2204,8 @@ eru.get("/canvas/invert", async (req, res) => {
       });
     const result = await new DIG.Invert().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2154,11 +2221,8 @@ eru.get("/canvas/sepia", async (req, res) => {
       });
     const result = await new DIG.Sepia().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2174,11 +2238,8 @@ eru.get("/canvas/triggered", async (req, res) => {
       });
     const result = await new DIG.Triggered().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2194,11 +2255,8 @@ eru.get("/canvas/ad", async (req, res) => {
       });
     const result = await new DIG.Ad().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2217,11 +2275,8 @@ eru.get("/canvas/batslap", async (req, res) => {
       req.query.image_url2
     );
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2237,11 +2292,8 @@ eru.get("/canvas/beautiful", async (req, res) => {
       });
     const result = await new DIG.Beautiful().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2260,11 +2312,8 @@ eru.get("/canvas/bed", async (req, res) => {
       req.query.image_url2
     );
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2280,11 +2329,8 @@ eru.get("/canvas/paint", async (req, res) => {
       });
     const result = await new DIG.Bobross().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2300,11 +2346,8 @@ eru.get("/canvas/stonk", async (req, res) => {
       });
     const result = await new DIG.ConfusedStonk().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2320,11 +2363,8 @@ eru.get("/canvas/delete", async (req, res) => {
       });
     const result = await new DIG.Delete().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2343,11 +2383,8 @@ eru.get("/canvas/doublestonk", async (req, res) => {
       req.query.image_url2
     );
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2363,11 +2400,8 @@ eru.get("/canvas/facepalm", async (req, res) => {
       });
     const result = await new DIG.Facepalm().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2383,11 +2417,8 @@ eru.get("/canvas/hitler", async (req, res) => {
       });
     const result = await new DIG.Hitler().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2403,11 +2434,8 @@ eru.get("/canvas/jail", async (req, res) => {
       });
     const result = await new DIG.Jail().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2423,11 +2451,8 @@ eru.get("/canvas/Karaba", async (req, res) => {
       });
     const result = await new DIG.Karaba().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2446,11 +2471,8 @@ eru.get("/canvas/Kiss", async (req, res) => {
       req.query.image_url2
     );
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2466,11 +2488,8 @@ eru.get("/canvas/Mms", async (req, res) => {
       });
     const result = await new DIG.Mms().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2486,11 +2505,8 @@ eru.get("/canvas/NotStonk", async (req, res) => {
       });
     const result = await new DIG.NotStonk().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2506,11 +2522,8 @@ eru.get("/canvas/Poutine", async (req, res) => {
       });
     const result = await new DIG.Poutine().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2526,11 +2539,8 @@ eru.get("/canvas/Rip", async (req, res) => {
       });
     const result = await new DIG.Rip().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2549,11 +2559,8 @@ eru.get("/canvas/Spank", async (req, res) => {
       req.query.image_url2
     );
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2569,11 +2576,8 @@ eru.get("/canvas/Tatoo", async (req, res) => {
       });
     const result = await new DIG.Tatoo().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2589,11 +2593,8 @@ eru.get("/canvas/Thomas", async (req, res) => {
       });
     const result = await new DIG.Thomas().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -2609,11 +2610,8 @@ eru.get("/canvas/Trash", async (req, res) => {
       });
     const result = await new DIG.Trash().getImage(req.query.image_url);
     const img = Buffer.from(result, "base64");
-    res.writeHead(200, {
-      "Content-Type": "image/png",
-      "Content-Length": img.length,
-    });
-    res.end(img);
+    res.setHeader("Content-Type", "image/png");
+    res.send(img);
   } catch (e) {
     res.json({
       status: "error",
@@ -3357,6 +3355,18 @@ eru.get("/h/rule34", async (req, res) => {
       res.json({ error: err.message });
     });
 });
+eru.get("/h/:id", async (req, res) => {
+  await fetch(`https:/api.waifu.pics/nsfw/${req.params.id}`)
+    .then((response) => response.json())
+    .then(async (data) => {
+      const result = await getBuffer(data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
 //===================================================================End NSFW===========================================================\\
 // ===================================================================Game===========================================================\\
 eru.get("/game/tebakgame", (req, res) => {
@@ -3538,18 +3548,7 @@ eru.get("/image/sfw/:id", async (req, res) => {
       res.json({ error: err.message });
     });
 });
-eru.get("/image/nsfw/:id", async (req, res) => {
-  await fetch("https:/api.waifu.pics/nsfw/" + req.params.id)
-    .then((response) => response.json())
-    .then(async (data) => {
-      const result = await getBuffer(data.url);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({ error: err.message });
-    });
-});
+
 // Google image
 eru.get("/image/gis", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan Query" });
@@ -3687,7 +3686,7 @@ eru.get("/tools/urlshort", async (req, res) => {
   }
   const link = await ShortUrl.create({ full: req.query.url });
   const result = {
-    link: `http://localhost:3000/short/${link.short}`,
+    link: `${baseUrl}/short/${link.short}`,
     id: link.short,
   };
   res.json(result);

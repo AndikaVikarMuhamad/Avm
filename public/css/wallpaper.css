@@ -1,0 +1,24 @@
+.navbar {
+  background-color: #ff00ff;
+}
+footer {
+  position: fixed;
+  bottom: 0;
+  background-color: #ff00ff;
+  text-decoration: none;
+  color: black;
+  width: 100%;
+  height: 200px;
+}
+footer li {
+  color: black;
+}
+/* .footer {
+  background-color: #040a18;
+  box-sizing: border-box;
+  width: 100%;
+  text-align: left;
+  font: bold 16px sans-serif;
+  padding: 50px 50px 60px 50px;
+  margin-top: 80px;
+} */
