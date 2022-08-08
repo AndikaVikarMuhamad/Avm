@@ -1,3 +1,4 @@
 # Nyoba nyoba doang
 
-males buat docs
+males buat dashboard
+
