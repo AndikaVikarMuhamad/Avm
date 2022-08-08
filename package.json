@@ -35,7 +35,7 @@
     "mongoose": "^6.5.1",
     "node": "^16.0.0",
     "node-fetch": "^2.6.7",
-    "otakudesu-scraper": "^1.1.0",
+    "otakudesu-scraper": "^1.2.0",
     "pageres": "^6.3.1",
     "path": "^0.12.7",
     "qs": "^6.11.0",
