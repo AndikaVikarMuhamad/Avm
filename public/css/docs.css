@@ -64,6 +64,8 @@ body.dark .activity-data::-webkit-scrollbar-thumb:hover {
 }
 
 nav {
+  overflow-y: scroll;
+  overflow-x: hidden;
   position: fixed;
   top: 0;
   left: 0;

@@ -7,8 +7,8 @@ const short = require("./route/short");
 eru.use(express.static(__dirname + "/public"));
 eru.use("/api", api);
 eru.use("/short", short);
-//     Landing page
 
+//     Landing page
 eru.get("/", (req, res) => {
   res.sendFile("views/landing.html", { root: __dirname });
 });
@@ -16,29 +16,13 @@ eru.get("/", (req, res) => {
 eru.get("/docs", (req, res) => {
   res.sendFile("views/docs.html", { root: __dirname });
 });
-// wallpaper
-eru.get("/wallpaper", (req, res) => {
-  res.sendFile("views/wallpaper.html", { root: __dirname });
-});
+
 // 404
 eru.use("/", (req, res) => {
   res.status(404);
   res.sendFile("views/404.html", { root: __dirname });
 });
-eru.get("/tes", (req, res) => {
-  const { spawn } = require("child_process");
-  const py = spawn("python", ["tes.py"]);
-  py.stdout.on("data", (data) => {
-    // console.log(data.toString());
-    res.send(data.toString());
-  });
-  py.stderr.on("data", (data) => {
-    console.log(`stderr: ${data}`);
-  });
-  // py.on("close", (code) => {
-  //   console.log(`child process exited with code ${code}`);
-  // });
-});
+
 eru.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

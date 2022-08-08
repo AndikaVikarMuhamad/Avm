@@ -20,8 +20,8 @@ const bt = require("@bochilteam/scraper");
 const Artbreeder = new thiccysapi.Artbreeder(5, "all");
 const { Brainly } = require("brainly-scraper-v2");
 const brain = new Brainly("id");
-const _gis = require("g-i-s");
-const gis = promisify(_gis);
+const Gis = require("g-i-s");
+const gis = promisify(Gis);
 const malScraper = require("mal-scraper");
 const Scathach = require("scathach-api");
 const hentai = new Scathach();
@@ -3578,7 +3578,6 @@ eru.get("/image/gis-json", async (req, res) => {
       });
     });
 });
-
 eru.get("/image/artbreader", async (req, res) => {
   if (!req.query.q) return res.send("Masukkan query");
   await Artbreeder.search(req.query.q)

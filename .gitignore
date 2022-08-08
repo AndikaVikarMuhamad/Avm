@@ -1,5 +1,6 @@
 node_modules
 aelah
 backup
-package-lock.json
-gitignore
+.gitignore
+README.md
+db
