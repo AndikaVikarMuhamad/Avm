@@ -5,7 +5,7 @@ const eru = express();
 const urlExist = require("url-exist");
 const baseUrl = "http://localhost:3000";
 mongoose.connect(
-  "mongodb+srv://andika:eAswHY3K9gd4ByNV@cluster0.plr9pio.mongodb.net/?retryWrites=true&w=majority",
+  "Ur mongodb",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
