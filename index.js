@@ -12,7 +12,6 @@ eru.use("/short", short);
 eru.get("/", (req, res) => {
   res.sendFile("views/landing.html", { root: __dirname });
 });
-//     Landing page
 
 eru.get("/tes", (req, res) => {
   const { spawn } = require("child_process");

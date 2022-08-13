@@ -26,21 +26,27 @@ const malScraper = require("mal-scraper");
 const Scathach = require("scathach-api");
 const hentai = new Scathach();
 const gplay = require("google-play-scraper");
-const { OtakudesuInstance } = require("otakudesu-scraper");
-const otakudesu = new OtakudesuInstance();
 const knights = require("knights-canvas");
 const DIG = require("discord-image-generation");
 const fietu = require("fietu");
 const { CanvasSenpai } = require("canvas-senpai");
 const canva = new CanvasSenpai();
-const far = require("xfarr-api");
-const ShortUrl = require("../lib/utils/short");
-const { cerpen, chara } = require("../lib/utils/scrape");
 const { text } = require("cherio/lib/static");
 const Pageres = require("pageres");
 const urlExist = require("url-exist");
 
+// My module
+const ShortUrl = require("../lib/utils/short");
+const { cerpen, chara } = require("../lib/utils/scrape");
+const attp = require("../lib/utils/attp");
+const otakudesu = require("../lib/utils/otakudesu");
+const mediafire = require("../lib/utils/mediafire");
+const komiku = require("../lib/utils/komiku");
+const adikfilm = require("../lib/utils/adikfilm");
+const kuyhaa = require("../lib/utils/kuyhaa");
+const doujindesu = require("../lib/utils/doujindesu");
 //=========================================Random===========================================\\
+
 eru.get("/random/cerpen", async (req, res) => {
   try {
     cerpen("", async (text) => {
@@ -97,24 +103,7 @@ eru.get("/anime/wait", async (req, res) => {
 // ==============================================Selesai tes=============================\\
 
 // ===============================================information============================\\
-// npm
 
-// eru.get("/information/npmseacrh", async (req, res) => {
-//   // if (!req.query.q)
-//   //   return res.json({
-//   //     error: "Masuka query",
-//   //   });
-//   // thiccysapi
-//   //   .npm_module(req.query.q, 3, true)
-//   //   .then(async (data) => {
-//   //     res.json(data);
-//   //   })
-//   //   .catch((err) => {
-//   //     res.json({
-//   //       error: err.message,
-//   //     });
-//   //   });
-// });
 // minecraft server
 eru.get("/information/java", async (req, res) => {
   if (!req.query.ip)
@@ -173,26 +162,12 @@ eru.get("/information/bedrock", async (req, res) => {
 //otakudesu
 eru.get("/information/otakudesu", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan querynya" });
-  otakudesu
-    .getAnime(req.query.q)
+  otakudesu(req.query.q)
     .then((data) => {
-      const result = data.map((item) => {
-        return {
-          Name: item.name,
-          Image: item.image,
-          Genre: item.meta.genres.join(","),
-          Status: item.meta.status,
-          Rating: item.meta.rating,
-        };
-      });
-      if (result.length < 5)
-        return res.json({ error: "Anime tidak ditemukan" });
-      res.json(result);
+      res.json(data);
     })
     .catch((err) => {
-      res.json({
-        error: err.message,
-      });
+      res.json({ error: err.message });
     });
 });
 
@@ -663,36 +638,65 @@ eru.get("/information/covid", async (req, res) => {
     });
 });
 
-//==============================================================Text Maker=========================================\\
-// attp && ttp
-eru.get("/textpro/ttp", async (req, res) => {
-  if (!req.query.text) return res.json({ error: "No text" });
-  far.maker
-    .ttp(req.query.text)
-    .then(async (data) => {
-      const result = await getBuffer(data.result);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
+// komiku
+eru.get("/information/komiku", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  komiku(req.query.q)
+    .then((data) => {
+      res.json(data);
     })
     .catch((err) => {
-      res.json({
-        error: err.message,
-      });
+      res.json({ error: err.message });
     });
 });
+
+// doujindesu
+eru.get("/information/doujindesu", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  doujindesu(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+//kuyhaa
+eru.get("/information/kuyhaa", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  kuyhaa(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+//adikfilm
+eru.get("/information/adikfilm", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  adikfilm(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+
+//==============================================================Text Maker=========================================\\
+// attp
 eru.get("/textpro/attp", async (req, res) => {
   if (!req.query.text) return res.json({ error: "No text" });
-  far.maker
-    .attp(req.query.text)
+  attp(req.query.text)
     .then(async (data) => {
-      const result = await getBuffer(data.result);
+      const result = await getBuffer(data.url);
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
     .catch((err) => {
-      res.json({
-        error: err.message,
-      });
+      res.json({ error: err.message });
     });
 });
 // Text pro
@@ -2125,7 +2129,7 @@ eru.get("/canvas/tweet", async (req, res) => {
   try {
     if ((!req.query.avatar, !req.query.name, !req.query.text))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const tweet = await new fietu.Tweet()
       .setAvatar(req.query.avatar)
@@ -2147,12 +2151,11 @@ eru.get("/canvas/blur", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Blur().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2166,12 +2169,11 @@ eru.get("/canvas/gay", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Gay().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2183,12 +2185,11 @@ eru.get("/canvas/greyscale", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Greyscale().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2200,12 +2201,11 @@ eru.get("/canvas/invert", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Invert().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2217,12 +2217,11 @@ eru.get("/canvas/sepia", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Sepia().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2234,12 +2233,11 @@ eru.get("/canvas/triggered", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Triggered().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2247,16 +2245,15 @@ eru.get("/canvas/triggered", async (req, res) => {
     });
   }
 });
-eru.get("/canvas/ad", async (req, res) => {
+eru.get("/canvas/ads", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Ad().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2268,15 +2265,14 @@ eru.get("/canvas/batslap", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Batslap().getImage(
       req.query.image_url,
       req.query.image_url2
     );
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2288,12 +2284,11 @@ eru.get("/canvas/beautiful", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Beautiful().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2305,15 +2300,14 @@ eru.get("/canvas/bed", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Bed().getImage(
       req.query.image_url,
       req.query.image_url2
     );
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2325,12 +2319,11 @@ eru.get("/canvas/paint", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Bobross().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2342,12 +2335,11 @@ eru.get("/canvas/stonk", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.ConfusedStonk().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2359,12 +2351,11 @@ eru.get("/canvas/delete", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Delete().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2376,15 +2367,14 @@ eru.get("/canvas/doublestonk", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.DoubleStonk().getImage(
       req.query.image_url,
       req.query.image_url2
     );
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2396,12 +2386,11 @@ eru.get("/canvas/facepalm", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Facepalm().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2413,12 +2402,11 @@ eru.get("/canvas/hitler", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Hitler().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2430,12 +2418,11 @@ eru.get("/canvas/jail", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Jail().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2447,12 +2434,11 @@ eru.get("/canvas/Karaba", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Karaba().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2464,15 +2450,14 @@ eru.get("/canvas/Kiss", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Kiss().getImage(
       req.query.image_url,
       req.query.image_url2
     );
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2484,12 +2469,11 @@ eru.get("/canvas/Mms", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Mms().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2501,12 +2485,11 @@ eru.get("/canvas/NotStonk", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.NotStonk().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2518,12 +2501,11 @@ eru.get("/canvas/Poutine", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Poutine().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2535,12 +2517,11 @@ eru.get("/canvas/Rip", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Rip().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2552,15 +2533,14 @@ eru.get("/canvas/Spank", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Spank().getImage(
       req.query.image_url,
       req.query.image_url2
     );
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2572,12 +2552,11 @@ eru.get("/canvas/Tatoo", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Tatoo().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2589,12 +2568,11 @@ eru.get("/canvas/Thomas", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Thomas().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2606,12 +2584,11 @@ eru.get("/canvas/Trash", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
-        error: "Masukan parameter yang benar",
+        error: "Masukan url foto",
       });
     const result = await new DIG.Trash().getImage(req.query.image_url);
-    const img = Buffer.from(result, "base64");
     res.setHeader("Content-Type", "image/png");
-    res.send(img);
+    res.send(result);
   } catch (e) {
     res.json({
       status: "error",
@@ -2619,101 +2596,19 @@ eru.get("/canvas/Trash", async (req, res) => {
     });
   }
 });
-eru.get("/canvas/Rank3", async (req, res) => {
-  try {
-    if (
-      (!req.query.name,
-      !req.query.level,
-      !req.query.rank,
-      !req.query.currentXP,
-      !req.query.fullXP,
-      !req.query.image_url)
-    )
-      return res.json({ error: "Masukan parameter yang benar" });
-    const data = await canva.rankcard({
-      link: "https://i.pinimg.com/originals/76/0e/d7/760ed7f52c90870503762ac92db92adc.jpg",
-      name: req.query.name,
-      discriminator: " ",
-      level: req.query.level,
-      rank: req.query.rank,
-      currentXP: req.query.currentXP,
-      fullXP: req.query.fullXP,
-      avatar: req.query.image_url,
-    });
 
-    await fs.writeFileSync(__path + "canvas.png", data);
-    res.sendFile(__path + "canvas.png");
-  } catch (e) {
-    res.json({
-      status: "error",
-      message: e.message,
-    });
-  }
-});
-eru.get("/canvas/welcome5", async (req, res) => {
-  try {
-    const image = await new knights.Welcome()
-      .setUsername(req.query.username)
-      .setGuildName(req.query.groupname)
-      .setGuildIcon(req.query.groupicon)
-      .setMemberCount(req.query.membercount)
-      .setAvatar(req.query.avatar)
-      .setBackground(req.query.background)
-      .toAttachment();
-    const data = image.toBuffer();
-    await fs.writeFileSync(__path + "/tmp/welcome.png", data);
-    res.sendFile(__path + "/tmp/welcome.png");
-  } catch (e) {
-    res.json({ error: e.message });
-  }
-});
-const bg = [
-  "https://cdn.discordapp.com/attachments/724098180989879072/724098180989879072.png",
-];
-
-eru.get("/canvas/welcome2", async (req, res) => {
-  try {
-    if (
-      (!req.query.username,
-      !req.query.groupname,
-      !req.query.membercount,
-      !req.query.avatar,
-      !req.query.background,
-      !req.query.groupicon)
-    )
-      return res.json({ error: "Masukan " });
-    const image = await new knights.Welcome()
-      .setUsername(req.query.username)
-      .setGuildName(req.query.groupname)
-      .setGuildIcon(req.query.groupicon)
-      .setMemberCount(req.query.membercount)
-      .setAvatar(req.query.avatar)
-      .setBackground(req.query.background)
-      .toAttachment();
-    data = image.toBuffer();
-    await fs.writeFileSync(__path + "/tmp/welcome.png", data);
-    res.sendFile(__path + "/tmp/welcome.png");
-  } catch (e) {
-    console.log(e);
-    res.json({
-      status: "error",
-      message: "Ada params yang kosong",
-      error: e.message,
-    });
-  }
-});
 //welcome
 eru.get("/canvas/welcome", async (req, res) => {
-  if ((!req.query.desk, !req.query.avatar, !req.query.gcname))
+  if ((!req.query.desk, !req.query.avatar, !req.query.groupname))
     return res.json({ error: "Masukan query yang benar" });
   try {
     const welcome = await new canvafy.WelcomeLeave()
       .setAvatar(req.query.avatar)
       .setBackground(
         "image",
-        "https://th.bing.com/th/id/R.248b992f15fb255621fa51ee0ca0cecb?rik=K8hIsVFACWQ8%2fw&pid=ImgRaw&r=0"
+        "https://img.freepik.com/premium-vector/pixel-art-lake-house-wallpaper-with-wooden-deck-trees-8bit-background_360488-394.jpg?w=2000"
       )
-      .setTitle(req.query.gcname)
+      .setTitle(req.query.groupname)
       .setDescription(req.query.desk)
       .setBorder("#2a2e35")
       .setAvatarBorder("#2a2e35")
@@ -2726,19 +2621,73 @@ eru.get("/canvas/welcome", async (req, res) => {
     res.json({ error: e.message });
   }
 });
+eru.get("/canvas/welcome2", async (req, res) => {
+  try {
+    if (
+      (!req.query.username,
+      !req.query.groupname,
+      !req.query.membercount,
+      !req.query.avatar,
+      !req.query.groupicon)
+    )
+      return res.json({ error: "Masukan query" });
+    const image = await new knights.Welcome()
+      .setUsername(req.query.username)
+      .setGuildName(req.query.groupname)
+      .setGuildIcon(req.query.groupicon)
+      .setMemberCount(req.query.membercount)
+      .setAvatar(req.query.avatar)
+      .setBackground(
+        "https://img.freepik.com/premium-vector/pixel-art-lake-house-wallpaper-with-wooden-deck-trees-8bit-background_360488-394.jpg?w=2000"
+      )
+      .toAttachment();
+    const data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    console.log(e);
+    res.json({
+      status: "error",
+      message: "Ada params yang kosong",
+      error: e.message,
+    });
+  }
+});
+eru.get("/canvas/welcome3", async (req, res) => {
+  try {
+    const bg = [
+      "https://cdn.discordapp.com/attachments/724098180989879072/724098180989879072.png",
+    ];
+    const image = await new knights.Welcome()
+      .setUsername(req.query.username)
+      .setGuildName(req.query.groupname)
+      .setGuildIcon(req.query.groupicon)
+      .setMemberCount(req.query.membercount)
+      .setAvatar(req.query.avatar)
+      .setBackground(
+        "https://c4.wallpaperflare.com/wallpaper/712/851/599/artistic-pixel-art-8-bit-wallpaper-preview.jpg"
+      )
+      .toAttachment();
+    const data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
 //leave
 
 eru.get("/canvas/leave", async (req, res) => {
-  if ((!req.query.desk, !req.query.avatar, !req.query.gcname))
+  if ((!req.query.desk, !req.query.avatar, !req.query.groupname))
     return res.json({ error: "Masukan query yang benar" });
   try {
     const welcome = await new canvafy.WelcomeLeave()
       .setAvatar(req.query.avatar)
       .setBackground(
         "image",
-        "https://th.bing.com/th/id/R.248b992f15fb255621fa51ee0ca0cecb?rik=K8hIsVFACWQ8%2fw&pid=ImgRaw&r=0"
+        "https://c4.wallpaperflare.com/wallpaper/712/851/599/artistic-pixel-art-8-bit-wallpaper-preview.jpg"
       )
-      .setTitle(req.query.gcname)
+      .setTitle(req.query.groupname)
       .setDescription(req.query.desk)
       .setBorder("#2a2e35")
       .setAvatarBorder("#2a2e35")
@@ -2778,7 +2727,50 @@ eru.get("/canvas/rank", async (req, res) => {
     res.json({ error: e.message });
   }
 });
-// eru.get("/canvas/rank2", async (req, res) => {
+eru.get("/canvas/Rank2", async (req, res) => {
+  try {
+    if (
+      (!req.query.name,
+      !req.query.level,
+      !req.query.rank,
+      !req.query.currxp,
+      !req.query.needxp,
+      !req.query.avatar)
+    )
+      return res.json({ error: "Masukan query yang benar" });
+    const data = await canva.rankcard({
+      link: "https://i.pinimg.com/originals/76/0e/d7/760ed7f52c90870503762ac92db92adc.jpg",
+      name: req.query.name,
+      discriminator: " ",
+      level: req.query.level,
+      rank: req.query.rank,
+      currentXP: req.query.currxp,
+      fullXP: req.query.needxp,
+      avatar: req.query.avatar,
+    });
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({
+      status: "error",
+      message: e.message,
+    });
+  }
+});
+eru.get("/canvas/levelup", async (req, res) => {
+  if (!req.query.avatar) return res.json({ error: "Masukan url foto" });
+  try {
+    const image = await new knights.Up()
+      .setAvatar(req.query.avatar)
+      .toAttachment();
+    data = image.toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.send(data);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+// eru.get("/canvas/rank3", async (req, res) => {
 //   if (
 //     //   !req.query.name,
 //     // !req.query.avatar,
@@ -2813,9 +2805,9 @@ eru.get("/canvas/rank", async (req, res) => {
 
 // effect
 eru.get("/canvas/affect", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
   try {
-    const affect = await canvafy.Image.affect(req.query.url);
+    const affect = await canvafy.Image.affect(req.query.image_url);
     const data = affect.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
@@ -2823,21 +2815,12 @@ eru.get("/canvas/affect", async (req, res) => {
     res.json({ error: e.message });
   }
 });
-eru.get("/canvas/levelup", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
-  try {
-    var image = await new knights.Up().setAvatar(req.query.url).toAttachment();
-    data = image.toBuffer();
-    res.setHeader("Content-Type", "image/png");
-    res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
-  }
-});
 eru.get("/canvas/hornycard", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
   try {
-    var image = await new knights.Horny().setAvatar(req.query.url).toBuild();
+    const image = await new knights.Horny()
+      .setAvatar(req.query.image_url)
+      .toBuild();
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
@@ -2846,9 +2829,11 @@ eru.get("/canvas/hornycard", async (req, res) => {
   }
 });
 eru.get("/canvas/jojocard", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
   try {
-    var image = await new knights.Jo().setImage(req.query.url).toBuild();
+    const image = await new knights.Jo()
+      .setImage(req.query.image_url)
+      .toBuild();
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
@@ -2857,10 +2842,10 @@ eru.get("/canvas/jojocard", async (req, res) => {
   }
 });
 eru.get("/canvas/patrick", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
   try {
-    var image = await new knights.Patrick()
-      .setAvatar(req.query.url)
+    const image = await new knights.Patrick()
+      .setAvatar(req.query.image_url)
       .toAttachment();
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
@@ -2870,11 +2855,12 @@ eru.get("/canvas/patrick", async (req, res) => {
   }
 });
 eru.get("/canvas/bonk", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if ((!req.query.image_url, !req.query.image_url2))
+    return res.json({ error: "Masukan url foto" });
   try {
-    var image = await new knights.Bonk()
-      .setAvatar1(req.query.url)
-      .setAvatar2(req.query.url2)
+    const image = await new knights.Bonk()
+      .setAvatar1(req.query.image_url)
+      .setAvatar2(req.query.image_url2)
       .toBuild();
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
@@ -2884,10 +2870,10 @@ eru.get("/canvas/bonk", async (req, res) => {
   }
 });
 eru.get("/canvas/burn", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
   try {
-    var image = await new knights.Burn()
-      .setAvatar(req.query.url)
+    const image = await new knights.Burn()
+      .setAvatar(req.query.image_url)
       .toAttachment();
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
@@ -2991,10 +2977,10 @@ eru.get("/download/play", async (req, res) => {
   await yts(req.query.q)
     .then(async (data) => {
       const url = data.videos[0].url;
-      const video = ytdl.getInfo(url);
+      const video = await ytdl.getInfo(url);
       const datas = video.formats;
       const thumb =
-        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+        video.player_response.microformat.playerMicroformatRenderer.thumbnail
           .thumbnails[0].url;
       const title =
         video.player_response.microformat.playerMicroformatRenderer.title
@@ -3032,7 +3018,7 @@ eru.get("/download/playmp4", async (req, res) => {
         mp4.player_response.microformat.playerMicroformatRenderer.title
           .simpleText;
       const thumb =
-        data.player_response.microformat.playerMicroformatRenderer.thumbnail
+        mp4.player_response.microformat.playerMicroformatRenderer.thumbnail
           .thumbnails[0].url;
       const channel =
         mp4.player_response.microformat.playerMicroformatRenderer
@@ -3076,29 +3062,7 @@ eru.get("/download/tiktok", async (req, res) => {
       });
     });
 });
-eru.get("/download/tiktok2", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan URL" });
-  far.downloader
-    .tiktok(req.query.url)
-    .then((data) => {
-      const result = data.media.map((item) => {
-        return {
-          title: data.title,
-          url: item.url,
-          quality: item.quality,
-          extension: item.extension,
-        };
-      });
 
-      res.json(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-        message: "URL tidak valid",
-      });
-    });
-});
 eru.get("/download/tiktok3", async (req, res) => {
   bt.tiktokdl(req.query.url)
     .then((data) => {
@@ -3123,27 +3087,8 @@ eru.get("/download/ig", async (req, res) => {
       res.json({ error: err.message });
     });
 });
+
 eru.get("/download/ig2", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan URL" });
-
-  far.downloader
-    .instagram(req.query.url)
-    .then(async (data) => {
-      const a = data.media;
-
-      const result = a.map((item) => {
-        return {
-          url: item.url,
-        };
-      });
-      // console.log(result);
-      res.json(result);
-    })
-    .catch((err) => {
-      res.json({ error: err.message });
-    });
-});
-eru.get("/download/ig3", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Masukan URL" });
   bt.instagramdl(req.query.url)
     .then((data) => {
@@ -3203,7 +3148,7 @@ eru.get("/download/fb", async (req, res) => {
 // mediafire
 eru.get("/download/mediafire", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Url tidak ada" });
-  bt.mediafiredl(req.query.url)
+  mediafire(req.query.url)
     .then((data) => {
       res.json(data);
     })
