@@ -2,6 +2,7 @@ const express = require("express");
 const eru = express();
 const port = 3000;
 const api = require("./route/api");
+const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
 
 eru.use(express.static(__dirname + "/public"));
@@ -9,27 +10,9 @@ eru.use("/api", api);
 eru.use("/short", short);
 
 //     Landing page
-eru.get("/", (req, res) => {
-  res.sendFile("views/landing.html", { root: __dirname });
-});
-
-eru.get("/tes", (req, res) => {
-  const { spawn } = require("child_process");
-  const py = spawn("python", ["tes.py"]);
-  py.stdout.on("data", (data) => {
-    // console.log(data.toString());
-    res.send(data.toString());
-  });
-  py.stderr.on("data", (data) => {
-    console.log(`stderr: ${data}`);
-  });
-  // py.on("close", (code) => {
-  //   console.log(`child process exited with code ${code}`);
-  // });
-});
 
 eru.get("/", (req, res) => {
-  res.sendFile("views/landing.html", { root: __dirname });
+  res.sendFile(__dirname + "/views/landing.html");
 });
 // docs
 eru.get("/docs", (req, res) => {
@@ -45,7 +28,13 @@ eru.use("/", (req, res) => {
   res.status(404);
   res.sendFile("views/404.html", { root: __dirname });
 });
+eru.get("/:shortUrl", async (req, res) => {
+  const shortUrl = await ShortUrl.findOne({ short: req.params.shortUrl });
+  if (shortUrl == null) return res.send(404);
+  shortUrl.save();
+  res.redirect(shortUrl.full);
+});
 
 eru.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Online on port ${port}`);
 });

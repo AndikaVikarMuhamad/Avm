@@ -104,59 +104,59 @@
         <a href="/docs" class="Docs kaca">Back to Home</a>
       </div>
     </div>
-    <script>
-      const body = document.querySelector("body");
-      const text = document.querySelector(".info");
-      const button = document.querySelector(".Docs");
-      const img = document.getElementById("myimg");
-      const bg = [
-        {
-          color: "#aff0e4",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/UTI8wdFgra4uc7bi59SR.gif",
-        },
-        {
-          color: "#000000",
-          text: "#ffffff",
-          image: "https://ichikaa.xyz/file/V3NlLzoWAJqJMPBkankA.gif",
-        },
-        {
-          color: "#ffffff",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/xgHJbIPlDOvniDhlzSOn.gif",
-        },
-        {
-          color: "#14aa84",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/H5ngyKpysacNlpQOelev.gif",
-        },
-        {
-          color: "#eae9e8",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/dOtGSl8SQ3ooY4tQmfKT.gif",
-        },
-        {
-          color: "#f4aaaa",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/DYlFbrMsrkFVvZHDi0HX.gif",
-        },
-        {
-          color: "#e9fe6f",
-          text: "#000000",
-          image: "https://ichikaa.xyz/file/514QYjI3rxNQDswI6ghW.gif",
-        },
-      ];
-      const background = bg[Math.floor(Math.random() * bg.length)];
-      body.style.backgroundColor = `${background.color}`;
-      img.src = `${background.image}`;
-      text.style.color = `${background.text}`;
-      button.style.color = `${background.text}`;
-    </script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
       crossorigin="anonymous"
     ></script>
+    <script src="js/404.js"></script>
+    <!-- kalo ga di taro di sini error -->
+    <script>
+      const body = document.querySelector("body");
+const img = document.getElementById("myimg");
+const bg = [
+  {
+    color: "#aff0e4",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570465599639592/404_1.gif",
+  },
+  {
+    color: "#000000",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570831611375646/404_2.gif",
+  },
+  {
+    color: "#ffffff",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570832156639322/404_3.gif",
+  },
+  {
+    color: "#14aa84",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570832492167199/404_4.gif",
+  },
+  {
+    color: "#eae9e8",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570832949350541/404_5.gif",
+  },
+  {
+    color: "#f4aaaa",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570833259741245/404_6.gif",
+  },
+  {
+    color: "#e9fe6f",
+    image:
+      "https://cdn.discordapp.com/attachments/959416699461963837/1008570833540751513/404_7.gif",
+  },
+];
+const background = bg[Math.floor(Math.random() * bg.length)];
+body.style.backgroundColor = `${background.color}`;
+img.src = `${background.image}`;
+console.log(background);
+
+    </script>
   </body>
 </html>
 <!-- -->

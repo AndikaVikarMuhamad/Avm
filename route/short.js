@@ -3,7 +3,10 @@ const mongoose = require("mongoose");
 const ShortUrl = require("../lib/utils/short");
 const eru = express();
 const urlExist = require("url-exist");
+const __path = process.cwd();
 const baseUrl = "http://localhost:3000";
+eru.use(express.static(__path + "/public"));
+eru.use(express.urlencoded({ extended: false }));
 mongoose.connect(
   "mongodb+srv://andika:eAswHY3K9gd4ByNV@cluster0.plr9pio.mongodb.net/?retryWrites=true&w=majority",
   {
@@ -12,17 +15,20 @@ mongoose.connect(
   }
 );
 
-eru.use(express.urlencoded({ extended: false }));
+eru.get("/", (req, res) => {
+  res.sendFile(__path + "/public/views/short.html");
+});
 
 eru.get("/db", async (req, res) => {
   const shortUrls = await ShortUrl.find();
   res.json(shortUrls);
 });
-eru.get("/", async (req, res) => {
+
+eru.get("/list", async (req, res) => {
   const shortUrls = await ShortUrl.find();
   const id = shortUrls.map((url) => {
     return {
-      link: `${baseUrl}/short/${url.short}`,
+      link: `${baseUrl}/${url.short}`,
       url: url.full,
       id: url.short,
     };
@@ -38,28 +44,25 @@ eru.get("/remove", async (req, res) => {
   res.send("Berhasil dihapus");
 });
 eru.get("/create", async (req, res) => {
-  const check = await ShortUrl.findOne({ full: req.query.url });
-  const exist = await urlExist(req.query.url);
-  if (!exist) return res.json({ error: "URL tidak ditemukan" });
-  else if (!req.query.url) return res.send("Masukan url");
-  else if (check)
+  if (!req.query.url)
     return res.json({
-      link: `${baseUrl}/short/${check.short}`,
-      id: check.short,
+      error: "Masukan URL",
     });
-  const link = await ShortUrl.create({ full: req.query.url });
-  const result = {
-    link: `${baseUrl}/short/${link.short}`,
-    id: link.short,
-  };
-  res.json(result);
+  else {
+    const check = await ShortUrl.findOne({ full: req.query.url });
+    const exist = await urlExist(req.query.url);
+    if (!exist) return res.json({ error: "URL tidak ditemukan" });
+    if (check)
+      return res.json({
+        link: `${baseUrl}/${check.short}`,
+        id: check.short,
+      });
+    const link = await ShortUrl.create({ full: req.query.url });
+    const result = {
+      link: `${baseUrl}/${link.short}`,
+      id: link.short,
+    };
+    res.json(result);
+  }
 });
-
-eru.get("/:shortUrl", async (req, res) => {
-  const shortUrl = await ShortUrl.findOne({ short: req.params.shortUrl });
-  if (shortUrl == null) return res.send(404);
-  shortUrl.save();
-  res.redirect(shortUrl.full);
-});
-
 module.exports = eru;

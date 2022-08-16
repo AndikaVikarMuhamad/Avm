@@ -34,7 +34,8 @@ const canva = new CanvasSenpai();
 const { text } = require("cherio/lib/static");
 const Pageres = require("pageres");
 const urlExist = require("url-exist");
-
+const { Cabul } = require("cabul");
+const reddit = new Cabul();
 // My module
 const ShortUrl = require("../lib/utils/short");
 const { cerpen, chara } = require("../lib/utils/scrape");
@@ -45,7 +46,24 @@ const komiku = require("../lib/utils/komiku");
 const adikfilm = require("../lib/utils/adikfilm");
 const kuyhaa = require("../lib/utils/kuyhaa");
 const doujindesu = require("../lib/utils/doujindesu");
+const search = (array, key, value) => {
+  return array.filter((object) => {
+    return object[key] === value;
+  });
+};
 //=========================================Random===========================================\\
+eru.get("/ae", async (req, res) => {
+  const users = fs.readFileSync(`./db/user.json`);
+  const data = JSON.parse(users);
+  const result = data.users;
+  res.json(result);
+});
+// eru.get("/games/tebakbendera2", async (req, res) => {
+//   const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
+//   const data = JSON.parse(bendera);
+//   const result = pickRandom(data);
+//   res.json(result);
+// });
 
 eru.get("/random/cerpen", async (req, res) => {
   try {
@@ -2123,7 +2141,7 @@ eru.get("/textpro/embossed", async (req, res) => {
       });
     });
 });
-
+eru.get("/textpro/asw", async (req, res) => {});
 // ==================================================MAKER==================================================\\
 eru.get("/canvas/tweet", async (req, res) => {
   try {
@@ -3176,6 +3194,48 @@ eru.get("/download/savefrom", async (req, res) => {
 });
 // =============================================================END Download======================================= \\
 //===================================================================NSFW===========================================================\\
+eru.get("/h/hentai/:type", async (req, res) => {
+  reddit
+    .hentai(req.params.type, "hot")
+    .then(async (data) => {
+      const result = await getBuffer(data.data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/h/irl/:type", async (req, res) => {
+  reddit
+    .irl(req.params.type, "hot")
+    .then(async (data) => {
+      const result = await getBuffer(data.data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
+eru.get("/h/meme/:type", async (req, res) => {
+  reddit
+    .meme(req.params.type, "hot")
+    .then(async (data) => {
+      const result = await getBuffer(data.data.url);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
+      });
+    });
+});
 
 eru.get("/h/hololive", async (req, res) => {
   hentai
@@ -3186,7 +3246,7 @@ eru.get("/h/hololive", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.sendStatus(500).json({ error: err.message });
     });
 });
 eru.get("/h/fgo", async (req, res) => {
@@ -3614,26 +3674,23 @@ eru.get("/image/wallpaper2", async (req, res) => {
 //===============================================End Random Image=============================\\
 //===============================================Tools=======================================\\
 eru.get("/tools/urlshort", async (req, res) => {
-  const check = await ShortUrl.findOne({ full: req.query.url });
-  if (!req.query.url)
-    return res.json({
-      error: "Masukan url",
-    });
-  else if (check)
-    return res.json({
-      link: `http://localhost:3000/short/${check.short}`,
-      id: check.short,
-    });
+  if (!req.query.url) return res.json({ error: "Masukan url" });
   else {
+    const check = await ShortUrl.findOne({ full: req.query.url });
     const exist = await urlExist(req.query.url);
     if (!exist) return res.json({ error: "URL tidak valid" });
+    if (check)
+      return res.json({
+        link: `${baseUrl}/${check.short}`,
+        id: check.short,
+      });
+    const link = await ShortUrl.create({ full: req.query.url });
+    const result = {
+      link: `${baseUrl}/${link.short}`,
+      id: link.short,
+    };
+    res.json(result);
   }
-  const link = await ShortUrl.create({ full: req.query.url });
-  const result = {
-    link: `${baseUrl}/short/${link.short}`,
-    id: link.short,
-  };
-  res.json(result);
 });
 
 eru.get("/tools/ssweb", async (req, res) => {
@@ -3724,10 +3781,8 @@ eru.get("/tools/shopee", async (req, res) => {
 
 eru.use(express.static(__path + "/public"));
 eru.use(function (req, res) {
-  res
-    .status(404)
-    .set("Content-Type", "text/html")
-    .sendFile(__path + "/views/404.html");
+  res.status(404);
+  res.sendFile(__path + "/public/views/404.html");
 });
 
 //Function dan Method
@@ -3752,5 +3807,4 @@ const getBuffer = async (url, options) => {
 const pickRandom = (arr) => {
   return arr[Math.floor(Math.random() * arr.length)];
 };
-
 module.exports = eru;
