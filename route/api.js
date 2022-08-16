@@ -31,14 +31,13 @@ const DIG = require("discord-image-generation");
 const fietu = require("fietu");
 const { CanvasSenpai } = require("canvas-senpai");
 const canva = new CanvasSenpai();
-const { text } = require("cherio/lib/static");
 const Pageres = require("pageres");
 const urlExist = require("url-exist");
 const { Cabul } = require("cabul");
 const reddit = new Cabul();
-// My module
+// My scraper
 const ShortUrl = require("../lib/utils/short");
-const { cerpen, chara } = require("../lib/utils/scrape");
+const cerpen = require("../lib/utils/cerpen");
 const attp = require("../lib/utils/attp");
 const otakudesu = require("../lib/utils/otakudesu");
 const mediafire = require("../lib/utils/mediafire");
@@ -46,18 +45,13 @@ const komiku = require("../lib/utils/komiku");
 const adikfilm = require("../lib/utils/adikfilm");
 const kuyhaa = require("../lib/utils/kuyhaa");
 const doujindesu = require("../lib/utils/doujindesu");
+const chara = require("../lib/utils/chara");
 const search = (array, key, value) => {
   return array.filter((object) => {
     return object[key] === value;
   });
 };
 //=========================================Random===========================================\\
-eru.get("/ae", async (req, res) => {
-  const users = fs.readFileSync(`./db/user.json`);
-  const data = JSON.parse(users);
-  const result = data.users;
-  res.json(result);
-});
 // eru.get("/games/tebakbendera2", async (req, res) => {
 //   const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
 //   const data = JSON.parse(bendera);
@@ -66,17 +60,17 @@ eru.get("/ae", async (req, res) => {
 // });
 
 eru.get("/random/cerpen", async (req, res) => {
-  try {
-    cerpen("", async (text) => {
+  cerpen()
+    .then((data) => {
       res.json({
-        result: text,
+        result: data,
+      });
+    })
+    .catch((err) => {
+      res.json({
+        error: err.message,
       });
     });
-  } catch (err) {
-    res.json({
-      error: err.message,
-    });
-  }
 });
 
 eru.get("/random/quotes", (req, res) => {
@@ -695,6 +689,16 @@ eru.get("/information/kuyhaa", async (req, res) => {
 eru.get("/information/adikfilm", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan Query" });
   adikfilm(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({ error: err.message });
+    });
+});
+eru.get("/information/character", async (req, res) => {
+  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  chara(req.query.q)
     .then((data) => {
       res.json(data);
     })
