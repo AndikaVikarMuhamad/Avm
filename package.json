@@ -22,6 +22,7 @@
     "canvas-senpai": "^2.0.3",
     "cherio": "^1.0.0-rc.2",
     "discord-image-generation": "^1.4.13",
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "fietu": "^1.1.38",
     "form-data": "^4.0.0",

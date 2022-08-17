@@ -1,13 +1,12 @@
 // const input = document.querySelector(".search-bar");
 const input = document.querySelector(".short-button");
-const baseUrl = "http://localhost:3000";
 const link = document.querySelector(".search-bar");
 const short = document.querySelector(".short");
 const old = document.querySelector(".link-old");
 const muncul = document.querySelector(".link");
 
 input.onclick = async () => {
-  fetch(`http://localhost:3000/short/create?url=${link.value}`)
+  fetch(`/short/create?url=${link.value}`)
     .then((response) => {
       return response.json();
     })
@@ -23,6 +22,7 @@ input.onclick = async () => {
         short.href = data.link;
       }
     });
+
 };
 link.addEventListener("keyup", (event) => {
   if (event.keyCode === 13) {

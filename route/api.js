@@ -1,7 +1,7 @@
 //All node modules
 // Config
-
-const baseUrl = "http://localhost:3000";
+const dotenv = require("dotenv");
+dotenv.config();
 
 // Main module
 const __path = process.cwd();
@@ -2968,7 +2968,7 @@ eru.get("/download/ytmp4", async (req, res) => {
       }
       const vid = video[0];
       const short = await fetch(
-        `http://localhost:3000/short/create?url=${vid}`
+        `${process.env.Baseurl}short/create?url=${vid}`
       ).then((res) => res.json());
       const result = {
         title,
@@ -3685,12 +3685,12 @@ eru.get("/tools/urlshort", async (req, res) => {
     if (!exist) return res.json({ error: "URL tidak valid" });
     if (check)
       return res.json({
-        link: `${baseUrl}/${check.short}`,
+        link: `${process.env.Baseurl}/${check.short}`,
         id: check.short,
       });
     const link = await ShortUrl.create({ full: req.query.url });
     const result = {
-      link: `${baseUrl}/${link.short}`,
+      link: `${process.env.Baseurl}/${link.short}`,
       id: link.short,
     };
     res.json(result);
@@ -3786,7 +3786,7 @@ eru.get("/tools/shopee", async (req, res) => {
 eru.use(express.static(__path + "/public"));
 eru.use(function (req, res) {
   res.status(404);
-  res.sendFile(__path + "/public/views/404.html");
+  res.sendFile(__path + "/views/404.html");
 });
 
 //Function dan Method

@@ -4,9 +4,11 @@ const ShortUrl = require("../lib/utils/short");
 const eru = express();
 const urlExist = require("url-exist");
 const __path = process.cwd();
-const baseUrl = "http://localhost:3000";
+const dotenv = require("dotenv");
+dotenv.config();
 eru.use(express.static(__path + "/public"));
 eru.use(express.urlencoded({ extended: false }));
+// Pake aja
 mongoose.connect(
   "mongodb+srv://andika:eAswHY3K9gd4ByNV@cluster0.plr9pio.mongodb.net/?retryWrites=true&w=majority",
   {
@@ -16,7 +18,7 @@ mongoose.connect(
 );
 
 eru.get("/", (req, res) => {
-  res.sendFile(__path + "/public/views/short.html");
+  res.sendFile(__path + "/views/short.html");
 });
 
 eru.get("/db", async (req, res) => {
@@ -28,7 +30,7 @@ eru.get("/list", async (req, res) => {
   const shortUrls = await ShortUrl.find();
   const id = shortUrls.map((url) => {
     return {
-      link: `${baseUrl}/${url.short}`,
+      link: `${process.env.Baseurl}/${url.short}`,
       url: url.full,
       id: url.short,
     };
@@ -54,12 +56,12 @@ eru.get("/create", async (req, res) => {
     if (!exist) return res.json({ error: "URL tidak ditemukan" });
     if (check)
       return res.json({
-        link: `${baseUrl}/${check.short}`,
+        link: `${process.env.Baseurl}/${check.short}`,
         id: check.short,
       });
     const link = await ShortUrl.create({ full: req.query.url });
     const result = {
-      link: `${baseUrl}/${link.short}`,
+      link: `${process.env.Baseurl}/${link.short}`,
       id: link.short,
     };
     res.json(result);
