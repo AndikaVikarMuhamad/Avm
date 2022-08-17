@@ -63,3 +63,4 @@ sidebarToggle.addEventListener("click", () => {
 //     }
 //   });
 // }
+window.onload = VisitorCount();
