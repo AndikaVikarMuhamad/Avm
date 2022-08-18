@@ -2940,6 +2940,12 @@ eru.get("/download/ytmp3", async (req, res) => {
       res.json({ error: err.message });
     });
 });
+eru.get("/download/ytm2", async (req, res) => {
+  let info = await ytdl.getInfo("https://www.youtube.com/watch?v=8l14WXHJx1Y");
+  let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
+  console.log("Formats with only audio: " + audioFormats.length);
+  res.json(audioFormats);
+});
 eru.get("/download/ytmp4", async (req, res) => {
   if (!req.query.url) return res.json({ error: "URL tidak ada" });
   await ytdl
@@ -2968,7 +2974,7 @@ eru.get("/download/ytmp4", async (req, res) => {
       }
       const vid = video[0];
       const short = await fetch(
-        `${process.env.Baseurl}short/create?url=${vid}`
+        `${process.env.Baseurl}/short/create?url=${vid}`
       ).then((res) => res.json());
       const result = {
         title,
