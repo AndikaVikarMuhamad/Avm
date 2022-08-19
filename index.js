@@ -5,7 +5,6 @@ const api = require("./route/api");
 const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
 
-
 eru.use(express.static(__dirname + "/public"));
 eru.use("/api", api);
 eru.use("/short", short);
@@ -20,12 +19,7 @@ eru.get("/docs", (req, res) => {
   res.sendFile("views/docs.html", { root: __dirname });
 });
 
-// wallpaper
-eru.get("/wallpaper", (req, res) => {
-  res.sendFile("views/wallpaper.html", { root: __dirname });
-});
 // 404
-
 
 eru.get("/:shortUrl", async (req, res) => {
   const shortUrl = await ShortUrl.findOne({ short: req.params.shortUrl });
@@ -37,7 +31,6 @@ eru.use("/", (req, res) => {
   res.status(404);
   res.sendFile("views/404.html", { root: __dirname });
 });
-
 
 eru.listen(port, () => {
   console.log(`Online on port ${port}`);
