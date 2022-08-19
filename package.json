@@ -34,7 +34,6 @@
     "mongoose": "^6.5.1",
     "nhentai-api": "^3.4.3",
     "node": "^16.0.0",
-    "node-fetch": "^2.6.7",
     "pageres": "^6.3.1",
     "request": "^2.88.2",
     "scathach-api": "^1.0.12",

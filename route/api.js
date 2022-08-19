@@ -6,7 +6,6 @@ dotenv.config();
 // Main module
 const __path = process.cwd();
 const axios = require("axios");
-const fetch = require("node-fetch");
 const fs = require("fs");
 const express = require("express");
 const eru = express.Router();
@@ -90,10 +89,10 @@ eru.get("/anime/wait", async (req, res) => {
     return res.json({
       error: "URL tidak ditemukan",
     });
-  await fetch(`https://api.trace.moe/search?anilistInfo&url=${req.query.url}`)
-    .then((response) => response.json())
+  axios
+    .get(`https://api.trace.moe/search?anilistInfo&url=${req.query.url}`)
     .then((data) => {
-      const datas = data.result;
+      const datas = data.data.result;
       const result = datas.map((item) => {
         return {
           title: item.anilist.title.romaji,
@@ -122,9 +121,10 @@ eru.get("/information/java", async (req, res) => {
     return res.json({
       error: "Masukkan ip server",
     });
-  await fetch(`https://api.mcsrvstat.us/2/${req.query.ip}`)
-    .then((response) => response.json())
-    .then((data) => {
+  axios
+    .get(`https://api.mcsrvstat.us/2/${req.query.ip}`)
+    .then((datas) => {
+      const data = datas.data;
       if (data.online == false)
         return res.json({ ip: req.query.ip, status: "Offline" });
       else {
@@ -149,9 +149,10 @@ eru.get("/information/bedrock", async (req, res) => {
     return res.json({
       error: "Masukkan ip server",
     });
-  await fetch(`https://api.mcsrvstat.us/bedrock/2/${req.query.ip}`)
-    .then((response) => response.json())
-    .then((data) => {
+  axios
+    .get(`https://api.mcsrvstat.us/bedrock/2/${req.query.ip}`)
+    .then((datas) => {
+      const data = datas.data;
       if (data.online == false)
         return res.json({ ip: req.query.ip, status: "Offline" });
       else {
@@ -387,9 +388,10 @@ eru.get("/information/gitstalk", async (req, res) => {
 
 eru.get("/information/gitstalk2", async (req, res) => {
   if (!req.query.name) return res.json({ error: "Masukan nama" });
-  fetch(`https://api.github.com/users/${req.query.name}`)
-    .then((response) => response.json())
-    .then((data) => {
+  axios
+    .get(`https://api.github.com/users/${req.query.name}`)
+    .then((datas) => {
+      const data = datas.data;
       const result = {
         Name: data.login,
         Avatar: data.avatar_url,
@@ -587,11 +589,12 @@ eru.get("/information/playstore", async (req, res) => {
 
 eru.get("/information/cuaca", async (req, res) => {
   if (!req.query.lokasi) return res.json({ error: "Masukan lokasinya" });
-  await fetch(
-    `https:/api.weatherapi.com/v1/forecast.json?key=a5a6bc21da734aa495f15121220207&q=${req.query.lokasi}`
-  )
-    .then((response) => response.json())
-    .then((data) => {
+  axios
+    .get(
+      `https://api.weatherapi.com/v1/forecast.json?key=a5a6bc21da734aa495f15121220207&q=${req.query.lokasi}`
+    )
+    .then((datas) => {
+      const data = datas.data;
       if (data.error) return res.json({ error: "Lokasi tidak di temukan" });
       const { name, region, country } = data.location;
       const { temp_c, wind_mph, humidity, feelslike_c } = data.current;
@@ -613,9 +616,10 @@ eru.get("/information/cuaca", async (req, res) => {
 });
 // Covid
 eru.get("/information/covid", async (req, res) => {
-  fetch("https://data.covid19.go.id/public/api/update.json")
-    .then((response) => response.json())
-    .then((data) => {
+  axios
+    .get(`https://data.covid19.go.id/public/api/update.json`)
+    .then((datas) => {
+      const data = datas.data;
       const { jumlah_odp, jumlah_pdp, total_spesimen, total_spesimen_negatif } =
         data.data;
       const {
@@ -2973,15 +2977,11 @@ eru.get("/download/ytmp4", async (req, res) => {
         }
       }
       const vid = video[0];
-      const short = await fetch(
-        `${process.env.Baseurl}/short/create?url=${vid}`
-      ).then((res) => res.json());
       const result = {
         title,
         channel,
         thumb,
         video: vid,
-        short: short.link,
       };
       res.json(result);
     })
@@ -3371,11 +3371,13 @@ eru.get("/h/rule34", async (req, res) => {
     });
 });
 eru.get("/h/:id", async (req, res) => {
-  await fetch(`https:/api.waifu.pics/nsfw/${req.params.id}`)
-    .then((response) => response.json())
-    .then(async (data) => {
+  axios
+    .get(`https://api.waifu.pics/nsfw/${req.params.id}`)
+    .then(async (datas) => {
+      const data = datas.data;
       const result = await getBuffer(data.url);
       res.setHeader("Content-Type", "image/png");
+      console.log(data.url);
       res.send(result);
     })
     .catch((err) => {
@@ -3552,9 +3554,10 @@ eru.get("/games/tekateki", async (req, res) => {
 //===============================================Random Image====================================================================\\
 // Anime image
 eru.get("/image/sfw/:id", async (req, res) => {
-  await fetch(`https:/api.waifu.pics/sfw/${req.params.id}`)
-    .then((response) => response.json())
-    .then(async (data) => {
+  axios
+    .get(`https://api.waifu.pics/sfw/${req.params.id}`)
+    .then(async (datas) => {
+      const data = datas.data;
       const result = await getBuffer(data.url);
       res.setHeader("Content-Type", "image/png");
       res.send(result);
