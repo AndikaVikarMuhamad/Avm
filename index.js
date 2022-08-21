@@ -34,4 +34,4 @@ eru.use("/", (req, res) => {
 
 eru.listen(port, () => {
   console.log(`Online on port ${port}`);
-});
+}).keepAliveTimeout = 61 * 1000;

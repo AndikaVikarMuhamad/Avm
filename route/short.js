@@ -6,6 +6,9 @@ const urlExist = require("url-exist");
 const __path = process.cwd();
 const dotenv = require("dotenv");
 dotenv.config();
+
+const myurl = process.env.Baseurl;
+
 eru.use(express.static(__path + "/public"));
 eru.use(express.urlencoded({ extended: false }));
 // Pake aja
@@ -30,7 +33,7 @@ eru.get("/list", async (req, res) => {
   const shortUrls = await ShortUrl.find();
   const id = shortUrls.map((url) => {
     return {
-      link: `${process.env.Baseurl}/${url.short}`,
+      link: `${myurl}/${url.short}`,
       url: url.full,
       id: url.short,
     };
@@ -56,12 +59,12 @@ eru.get("/create", async (req, res) => {
     if (!exist) return res.json({ error: "URL tidak ditemukan" });
     if (check)
       return res.json({
-        link: `${process.env.Baseurl}/${check.short}`,
+        link: `${myurl}/${check.short}`,
         id: check.short,
       });
     const link = await ShortUrl.create({ full: req.query.url });
     const result = {
-      link: `${process.env.Baseurl}/${link.short}`,
+      link: `${myurl}/${link.short}`,
       id: link.short,
     };
     res.json(result);

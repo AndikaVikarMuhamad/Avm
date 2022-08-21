@@ -1,8 +1,9 @@
-//All node modules
 // Config
 const dotenv = require("dotenv");
 dotenv.config();
+const myurl = process.env.Baseurl;
 
+//All node modules
 // Main module
 const __path = process.cwd();
 const axios = require("axios");
@@ -10,6 +11,7 @@ const fs = require("fs");
 const express = require("express");
 const eru = express.Router();
 const canvafy = require("canvafy");
+
 //external module
 const ytdl = require("ytdl-core");
 const yts = require("yt-search");
@@ -30,10 +32,10 @@ const DIG = require("discord-image-generation");
 const fietu = require("fietu");
 const { CanvasSenpai } = require("canvas-senpai");
 const canva = new CanvasSenpai();
-const Pageres = require("pageres");
 const urlExist = require("url-exist");
 const { Cabul } = require("cabul");
 const reddit = new Cabul();
+
 // My scraper
 const ShortUrl = require("../lib/utils/short");
 const cerpen = require("../lib/utils/cerpen");
@@ -45,11 +47,15 @@ const adikfilm = require("../lib/utils/adikfilm");
 const kuyhaa = require("../lib/utils/kuyhaa");
 const doujindesu = require("../lib/utils/doujindesu");
 const chara = require("../lib/utils/chara");
-const search = (array, key, value) => {
-  return array.filter((object) => {
-    return object[key] === value;
-  });
-};
+const wallpaper = require("../lib/utils/wallpaper");
+const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
+const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
+const {
+  stickerpack,
+  stickerpackdl,
+  stickerpacklink,
+} = require("../lib/utils/stickerpack");
+
 //=========================================Random===========================================\\
 // eru.get("/games/tebakbendera2", async (req, res) => {
 //   const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
@@ -67,6 +73,7 @@ eru.get("/random/cerpen", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -106,6 +113,7 @@ eru.get("/anime/wait", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
         message: "URL tidak ditemukan",
       });
@@ -140,7 +148,10 @@ eru.get("/information/java", async (req, res) => {
       }
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
@@ -168,19 +179,29 @@ eru.get("/information/bedrock", async (req, res) => {
       }
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 //otakudesu
 eru.get("/information/otakudesu", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan querynya" });
+  if (!req.query.q)
+    return res.json({
+      status: false,
+      error: "Masukan querynya",
+    });
   otakudesu(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
@@ -189,6 +210,7 @@ eru.get("/information/otakudesu", async (req, res) => {
 eru.get("/information/yts", async (req, res) => {
   if (!req.query.q)
     return res.json({
+      status: false,
       Error: "Masukan Query",
     });
   await yts(req.query.q)
@@ -209,6 +231,7 @@ eru.get("/information/yts", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -216,7 +239,7 @@ eru.get("/information/yts", async (req, res) => {
 // myanimelist
 eru.get("/information/anime", async (req, res) => {
   if ((!req.query.q, !req.query.type))
-    return res.json({ error: "Masukan Query" });
+    return res.json({ status: false, error: "Masukan Query" });
   else if (req.query.type == "full") {
     malScraper
       .getInfoFromName(req.query.q)
@@ -226,6 +249,7 @@ eru.get("/information/anime", async (req, res) => {
       .catch((err) => {
         res.json({
           error: err.message,
+          status: false,
         });
       });
   } else if (req.query.type == "simple") {
@@ -250,6 +274,7 @@ eru.get("/information/anime", async (req, res) => {
       .catch((err) => {
         res.json({
           error: err.message,
+          status: false,
         });
       });
   } else {
@@ -260,7 +285,7 @@ eru.get("/information/anime", async (req, res) => {
 });
 
 eru.get("/information/malsearch", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   malScraper
     .getResultsFromSearch(req.query.q)
     .then((data) => {
@@ -279,13 +304,14 @@ eru.get("/information/malsearch", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
 
 eru.get("/information/animeseason", async (req, res) => {
   if ((!req.query.tahun, !req.query.season))
-    return res.json({ error: "Masukan query tahun dan season" });
+    return res.json({ status: false, error: "Masukan query tahun dan season" });
 
   malScraper
     .getSeason(req.query.tahun, req.query.season)
@@ -301,14 +327,18 @@ eru.get("/information/animeseason", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 // stalker
 
 eru.get("/information/malstalk", async (req, res) => {
-  if (!req.query.name) return res.json({ error: "Masukan namanya" });
+  if (!req.query.name)
+    return res.json({ status: false, error: "Masukan namanya" });
   malScraper
     .getWatchListFromUser(req.query.name, "anime")
     .then((data) => {
@@ -343,19 +373,22 @@ eru.get("/information/malstalk", async (req, res) => {
             Image: item.animeImagePath,
           };
       });
-      if (!result.length) return res.json({ error: "User tidak ditemukan" });
+      if (!result.length)
+        return res.json({ status: false, error: "User tidak ditemukan" });
       res.json(result);
     })
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
         message: "User tidak ditemukan",
       });
     });
 });
 
 eru.get("/information/gitstalk", async (req, res) => {
-  if (!req.query.name) return res.json({ error: "Masukan nama" });
+  if (!req.query.name)
+    return res.json({ status: false, error: "Masukan nama" });
   thiccysapi
     .github_user(req.query.name)
     .then((data) => {
@@ -382,12 +415,14 @@ eru.get("/information/gitstalk", async (req, res) => {
       res.redirect(`/information/gitstalk2?${req.query.name}`);
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
 
 eru.get("/information/gitstalk2", async (req, res) => {
-  if (!req.query.name) return res.json({ error: "Masukan nama" });
+  if (!req.query.name)
+    return res.json({ status: false, error: "Masukan nama" });
   axios
     .get(`https://api.github.com/users/${req.query.name}`)
     .then((datas) => {
@@ -405,6 +440,7 @@ eru.get("/information/gitstalk2", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -413,7 +449,8 @@ eru.get("/information/igstalk", async (req, res) => {
   thiccysapi
     .insta_profile("levi.std")
     .then((data) => {
-      if (!req.query.name) return res.json({ error: "Masukan username" });
+      if (!req.query.name)
+        return res.json({ status: false, error: "Masukan username" });
       const result = data.map((item) => {
         return {
           Name: item.username,
@@ -423,16 +460,21 @@ eru.get("/information/igstalk", async (req, res) => {
           Post: item.post_count,
         };
       });
-      if (!result.length) return res.json({ error: "User tidak ditemukan" });
+      if (!result.length)
+        return res.json({ status: false, error: "User tidak ditemukan" });
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
       console.log(err);
     });
 });
 //brainly
 eru.get("/information/brainly", async (req, res) => {
+  if (!req.query.q) return res.json({ status: false, error: "Masukan query" });
   brain
     .search(req.query.q)
     .then((data) => {
@@ -467,6 +509,7 @@ eru.get("/information/brainly", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         message: err.message,
       });
     });
@@ -480,6 +523,7 @@ eru.get("/information/bioskopnow", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -492,6 +536,7 @@ eru.get("/information/bioskop", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -505,6 +550,7 @@ eru.get("/information/liputan6", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -517,6 +563,7 @@ eru.get("/information/cnbindonesia", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -529,6 +576,7 @@ eru.get("/information/antaranews", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -541,6 +589,7 @@ eru.get("/information/kompas", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -554,13 +603,14 @@ eru.get("/information/jadwalsholat", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
 });
 // Playstore
 eru.get("/information/playstore", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   gplay
     .search({
       term: req.query.q,
@@ -581,14 +631,18 @@ eru.get("/information/playstore", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 // Cuaca
 
 eru.get("/information/cuaca", async (req, res) => {
-  if (!req.query.lokasi) return res.json({ error: "Masukan lokasinya" });
+  if (!req.query.lokasi)
+    return res.json({ status: false, error: "Masukan lokasinya" });
   axios
     .get(
       `https://api.weatherapi.com/v1/forecast.json?key=a5a6bc21da734aa495f15121220207&q=${req.query.lokasi}`
@@ -611,7 +665,10 @@ eru.get("/information/cuaca", async (req, res) => {
       });
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 // Covid
@@ -650,71 +707,105 @@ eru.get("/information/covid", async (req, res) => {
       });
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 // komiku
 eru.get("/information/komiku", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   komiku(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 // doujindesu
 eru.get("/information/doujindesu", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   doujindesu(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 //kuyhaa
 eru.get("/information/kuyhaa", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   kuyhaa(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 //adikfilm
 eru.get("/information/adikfilm", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   adikfilm(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/information/character", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan Query" });
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   chara(req.query.q)
     .then((data) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/information/stickerpacklink", async (req, res) => {
+  if (!req.query.q) {
+    res.json({
+      status: false,
+      error: "Masukan query",
+    });
+  }
+  stickerpacklink(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json(err);
     });
 });
 
 //==============================================================Text Maker=========================================\\
 // attp
 eru.get("/textpro/attp", async (req, res) => {
-  if (!req.query.text) return res.json({ error: "No text" });
+  if (!req.query.text) return res.json({ status: false, error: "No text" });
   attp(req.query.text)
     .then(async (data) => {
       const result = await getBuffer(data.url);
@@ -722,7 +813,10 @@ eru.get("/textpro/attp", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 // Text pro
@@ -739,7 +833,7 @@ eru.get("/textpro/devilwings", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -758,7 +852,7 @@ eru.get("/textpro/orange", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -777,7 +871,7 @@ eru.get("/textpro/valentine", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -796,7 +890,7 @@ eru.get("/textpro/blackpink", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -815,7 +909,7 @@ eru.get("/textpro/blackpink2", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -834,7 +928,7 @@ eru.get("/textpro/bussines-sign", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -853,7 +947,7 @@ eru.get("/textpro/diamond", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -872,7 +966,7 @@ eru.get("/textpro/golden", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -891,7 +985,7 @@ eru.get("/textpro/carved", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -910,7 +1004,7 @@ eru.get("/textpro/stone", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -929,7 +1023,7 @@ eru.get("/textpro/glass", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -948,7 +1042,7 @@ eru.get("/textpro/luxury", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -967,7 +1061,7 @@ eru.get("/textpro/white-gold", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -986,7 +1080,7 @@ eru.get("/textpro/girrafe", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1005,7 +1099,7 @@ eru.get("/textpro/arcane", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1024,7 +1118,7 @@ eru.get("/textpro/batman", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1043,7 +1137,7 @@ eru.get("/textpro/circle-neon", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1062,7 +1156,7 @@ eru.get("/textpro/neon-light", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1081,7 +1175,7 @@ eru.get("/textpro/ancient", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1100,7 +1194,7 @@ eru.get("/textpro/led-display", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1119,7 +1213,7 @@ eru.get("/textpro/neon-display", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1138,7 +1232,7 @@ eru.get("/textpro/summer-beach", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1157,7 +1251,7 @@ eru.get("/textpro/summer-time", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1176,7 +1270,7 @@ eru.get("/textpro/sliced-text", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1195,7 +1289,7 @@ eru.get("/textpro/neon-glitch", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1214,7 +1308,7 @@ eru.get("/textpro/christmas-tree", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1233,7 +1327,7 @@ eru.get("/textpro/candy", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1252,7 +1346,7 @@ eru.get("/textpro/3d-christmas", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1271,7 +1365,7 @@ eru.get("/textpro/sparkle-christmas", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1290,7 +1384,7 @@ eru.get("/textpro/3d-deepsea", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1309,7 +1403,7 @@ eru.get("/textpro/america", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1328,7 +1422,7 @@ eru.get("/textpro/future", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1347,7 +1441,7 @@ eru.get("/textpro/3d-rainbow", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1366,7 +1460,7 @@ eru.get("/textpro/3d-pipe", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1385,7 +1479,7 @@ eru.get("/textpro/pencil", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1404,7 +1498,7 @@ eru.get("/textpro/blue-circuit", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1423,7 +1517,7 @@ eru.get("/textpro/space", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1442,7 +1536,7 @@ eru.get("/textpro/metallic", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1461,7 +1555,7 @@ eru.get("/textpro/fiction", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1480,7 +1574,7 @@ eru.get("/textpro/demon", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1499,7 +1593,7 @@ eru.get("/textpro/transformer", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1518,7 +1612,7 @@ eru.get("/textpro/berry", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1537,7 +1631,7 @@ eru.get("/textpro/thunder", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1556,7 +1650,7 @@ eru.get("/textpro/magma", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1575,7 +1669,7 @@ eru.get("/textpro/3d-stone", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1594,7 +1688,7 @@ eru.get("/textpro/3d-neon", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1613,7 +1707,7 @@ eru.get("/textpro/glitch", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1632,7 +1726,7 @@ eru.get("/textpro/neon", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1651,7 +1745,7 @@ eru.get("/textpro/snow-effect", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1670,7 +1764,7 @@ eru.get("/textpro/cloud", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1689,7 +1783,7 @@ eru.get("/textpro/sand", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1708,7 +1802,7 @@ eru.get("/textpro/sand2", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1727,7 +1821,7 @@ eru.get("/textpro/3d-sand", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1746,7 +1840,7 @@ eru.get("/textpro/sand3", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1765,7 +1859,7 @@ eru.get("/textpro/3d-glue", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1784,7 +1878,7 @@ eru.get("/textpro/metal-dark", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1803,7 +1897,7 @@ eru.get("/textpro/1917", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1822,7 +1916,7 @@ eru.get("/textpro/minion", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1841,7 +1935,7 @@ eru.get("/textpro/holographic", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1861,7 +1955,7 @@ eru.get("/textpro/metal-purple", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1880,7 +1974,7 @@ eru.get("/textpro/deluxe-silver", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1899,7 +1993,7 @@ eru.get("/textpro/break-wall", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1915,7 +2009,7 @@ eru.get("/textpro/honey", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1934,7 +2028,7 @@ eru.get("/textpro/dropwater", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1953,7 +2047,7 @@ eru.get("/textpro/horor-blood", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1972,7 +2066,7 @@ eru.get("/textpro/toxic", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -1991,7 +2085,7 @@ eru.get("/textpro/equalizer", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2010,7 +2104,7 @@ eru.get("/textpro/3d-underwater", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2029,7 +2123,7 @@ eru.get("/textpro/3d-paper", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2048,7 +2142,7 @@ eru.get("/textpro/water-color", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2067,7 +2161,7 @@ eru.get("/textpro/3d-metal", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2086,7 +2180,7 @@ eru.get("/textpro/broken-glass", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2105,7 +2199,7 @@ eru.get("/textpro/3d-gradient", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2124,7 +2218,7 @@ eru.get("/textpro/art-paper", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2143,7 +2237,7 @@ eru.get("/textpro/embossed", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: "error",
+        status: false,
         message: "masukan textnya",
         error: err.message,
       });
@@ -2155,6 +2249,7 @@ eru.get("/canvas/tweet", async (req, res) => {
   try {
     if ((!req.query.avatar, !req.query.name, !req.query.text))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const tweet = await new fietu.Tweet()
@@ -2166,10 +2261,10 @@ eru.get("/canvas/tweet", async (req, res) => {
     const img = Buffer.from(tweet, "base64");
     res.setHeader("Content-Type", "image/png");
     res.send(img);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      error: e.message,
+      status: false,
+      error: err.message,
     });
   }
 });
@@ -2177,16 +2272,17 @@ eru.get("/canvas/blur", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Blur().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
+      status: false,
       message: "Gambar tidak ada",
-      error: e.message,
+      error: err.message,
     });
   }
 });
@@ -2195,15 +2291,16 @@ eru.get("/canvas/gay", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Gay().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2211,15 +2308,16 @@ eru.get("/canvas/greyscale", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Greyscale().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2227,15 +2325,16 @@ eru.get("/canvas/invert", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Invert().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2243,15 +2342,16 @@ eru.get("/canvas/sepia", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Sepia().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2259,15 +2359,16 @@ eru.get("/canvas/triggered", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Triggered().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2275,15 +2376,16 @@ eru.get("/canvas/ads", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Ad().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2291,6 +2393,7 @@ eru.get("/canvas/batslap", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Batslap().getImage(
@@ -2299,10 +2402,10 @@ eru.get("/canvas/batslap", async (req, res) => {
     );
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2310,15 +2413,16 @@ eru.get("/canvas/beautiful", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Beautiful().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2326,6 +2430,7 @@ eru.get("/canvas/bed", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Bed().getImage(
@@ -2334,10 +2439,10 @@ eru.get("/canvas/bed", async (req, res) => {
     );
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2345,15 +2450,16 @@ eru.get("/canvas/paint", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Bobross().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2361,15 +2467,16 @@ eru.get("/canvas/stonk", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.ConfusedStonk().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2377,15 +2484,16 @@ eru.get("/canvas/delete", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Delete().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2393,6 +2501,7 @@ eru.get("/canvas/doublestonk", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.DoubleStonk().getImage(
@@ -2401,10 +2510,10 @@ eru.get("/canvas/doublestonk", async (req, res) => {
     );
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2412,15 +2521,16 @@ eru.get("/canvas/facepalm", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Facepalm().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2428,15 +2538,16 @@ eru.get("/canvas/hitler", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Hitler().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2444,15 +2555,16 @@ eru.get("/canvas/jail", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Jail().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2460,15 +2572,16 @@ eru.get("/canvas/Karaba", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Karaba().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2476,6 +2589,7 @@ eru.get("/canvas/Kiss", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Kiss().getImage(
@@ -2484,10 +2598,10 @@ eru.get("/canvas/Kiss", async (req, res) => {
     );
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2495,15 +2609,16 @@ eru.get("/canvas/Mms", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Mms().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2511,15 +2626,16 @@ eru.get("/canvas/NotStonk", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.NotStonk().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2527,15 +2643,16 @@ eru.get("/canvas/Poutine", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Poutine().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2543,15 +2660,16 @@ eru.get("/canvas/Rip", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Rip().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2559,6 +2677,7 @@ eru.get("/canvas/Spank", async (req, res) => {
   try {
     if ((!req.query.image_url, !req.query.image_url2))
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Spank().getImage(
@@ -2567,10 +2686,10 @@ eru.get("/canvas/Spank", async (req, res) => {
     );
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2578,15 +2697,16 @@ eru.get("/canvas/Tatoo", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Tatoo().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2594,15 +2714,16 @@ eru.get("/canvas/Thomas", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Thomas().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2610,15 +2731,16 @@ eru.get("/canvas/Trash", async (req, res) => {
   try {
     if (!req.query.image_url)
       return res.json({
+        status: false,
         error: "Masukan url foto",
       });
     const result = await new DIG.Trash().getImage(req.query.image_url);
     res.setHeader("Content-Type", "image/png");
     res.send(result);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2626,7 +2748,7 @@ eru.get("/canvas/Trash", async (req, res) => {
 //welcome
 eru.get("/canvas/welcome", async (req, res) => {
   if ((!req.query.desk, !req.query.avatar, !req.query.groupname))
-    return res.json({ error: "Masukan query yang benar" });
+    return res.json({ status: false, error: "Masukan query yang benar" });
   try {
     const welcome = await new canvafy.WelcomeLeave()
       .setAvatar(req.query.avatar)
@@ -2643,8 +2765,8 @@ eru.get("/canvas/welcome", async (req, res) => {
     const data = welcome.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 eru.get("/canvas/welcome2", async (req, res) => {
@@ -2656,7 +2778,7 @@ eru.get("/canvas/welcome2", async (req, res) => {
       !req.query.avatar,
       !req.query.groupicon)
     )
-      return res.json({ error: "Masukan query" });
+      return res.json({ status: false, error: "Masukan query" });
     const image = await new knights.Welcome()
       .setUsername(req.query.username)
       .setGuildName(req.query.groupname)
@@ -2670,12 +2792,12 @@ eru.get("/canvas/welcome2", async (req, res) => {
     const data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(err);
     res.json({
-      status: "error",
+      status: false,
       message: "Ada params yang kosong",
-      error: e.message,
+      error: err.message,
     });
   }
 });
@@ -2697,15 +2819,15 @@ eru.get("/canvas/welcome3", async (req, res) => {
     const data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 //leave
 
 eru.get("/canvas/leave", async (req, res) => {
   if ((!req.query.desk, !req.query.avatar, !req.query.groupname))
-    return res.json({ error: "Masukan query yang benar" });
+    return res.json({ status: false, error: "Masukan query yang benar" });
   try {
     const welcome = await new canvafy.WelcomeLeave()
       .setAvatar(req.query.avatar)
@@ -2722,8 +2844,8 @@ eru.get("/canvas/leave", async (req, res) => {
     const data = welcome.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 //rank
@@ -2735,7 +2857,7 @@ eru.get("/canvas/rank", async (req, res) => {
     !req.query.currxp,
     !req.query.level)
   )
-    return res.json({ error: "Masukan query yang benar" });
+    return res.json({ status: false, error: "Masukan query yang benar" });
   try {
     const image = await new knights.Rank()
       .setAvatar(req.query.avatar)
@@ -2749,8 +2871,8 @@ eru.get("/canvas/rank", async (req, res) => {
     const data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 eru.get("/canvas/Rank2", async (req, res) => {
@@ -2763,7 +2885,7 @@ eru.get("/canvas/Rank2", async (req, res) => {
       !req.query.needxp,
       !req.query.avatar)
     )
-      return res.json({ error: "Masukan query yang benar" });
+      return res.json({ status: false, error: "Masukan query yang benar" });
     const data = await canva.rankcard({
       link: "https://i.pinimg.com/originals/76/0e/d7/760ed7f52c90870503762ac92db92adc.jpg",
       name: req.query.name,
@@ -2776,10 +2898,10 @@ eru.get("/canvas/Rank2", async (req, res) => {
     });
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
+  } catch (err) {
     res.json({
-      status: "error",
-      message: e.message,
+      status: false,
+      message: err.message,
     });
   }
 });
@@ -2792,8 +2914,8 @@ eru.get("/canvas/levelup", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 // eru.get("/canvas/rank3", async (req, res) => {
@@ -2824,25 +2946,27 @@ eru.get("/canvas/levelup", async (req, res) => {
 //     const data = rank.toBuffer();
 //     res.setHeader("Content-Type", "image/png");
 //     res.send(data);
-//   } catch (e) {
-//     res.json({ error: e.message });
+//   } catch (err) {
+//     res.json({ error: err.message });
 //   }
 // });
 
 // effect
 eru.get("/canvas/affect", async (req, res) => {
-  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url)
+    return res.json({ status: false, error: "Masukan url foto" });
   try {
     const affect = await canvafy.Image.affect(req.query.image_url);
     const data = affect.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 eru.get("/canvas/hornycard", async (req, res) => {
-  if (!req.query.image_url) return res.json({ error: "Masukan url foto" });
+  if (!req.query.image_url)
+    return res.json({ status: false, error: "Masukan url foto" });
   try {
     const image = await new knights.Horny()
       .setAvatar(req.query.image_url)
@@ -2850,8 +2974,8 @@ eru.get("/canvas/hornycard", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ status: false, error: err.message });
   }
 });
 eru.get("/canvas/jojocard", async (req, res) => {
@@ -2863,8 +2987,8 @@ eru.get("/canvas/jojocard", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 eru.get("/canvas/patrick", async (req, res) => {
@@ -2876,8 +3000,8 @@ eru.get("/canvas/patrick", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 eru.get("/canvas/bonk", async (req, res) => {
@@ -2891,8 +3015,8 @@ eru.get("/canvas/bonk", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 eru.get("/canvas/burn", async (req, res) => {
@@ -2904,8 +3028,8 @@ eru.get("/canvas/burn", async (req, res) => {
     data = image.toBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(data);
-  } catch (e) {
-    res.json({ error: e.message });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 //===================================================Download===================================================\\
@@ -2941,7 +3065,10 @@ eru.get("/download/ytmp3", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/ytm2", async (req, res) => {
@@ -2986,7 +3113,10 @@ eru.get("/download/ytmp4", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/ytmp4-2", async (req, res) => {
@@ -2997,7 +3127,10 @@ eru.get("/download/ytmp4-2", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/play", async (req, res) => {
@@ -3032,7 +3165,10 @@ eru.get("/download/play", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/playmp4", async (req, res) => {
@@ -3071,7 +3207,10 @@ eru.get("/download/playmp4", async (req, res) => {
       res.json(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
@@ -3085,6 +3224,7 @@ eru.get("/download/tiktok", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
         message: "URL tidak valid",
       });
@@ -3098,6 +3238,7 @@ eru.get("/download/tiktok3", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
         message: "URL tidak valid",
       });
@@ -3112,7 +3253,10 @@ eru.get("/download/ig", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
@@ -3123,7 +3267,10 @@ eru.get("/download/ig2", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/igstory", async (req, res) => {
@@ -3154,7 +3301,10 @@ eru.get("/download/igstory2", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/download/igstory3", async (req, res) => {
@@ -3170,7 +3320,10 @@ eru.get("/download/fb", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 // mediafire
@@ -3182,6 +3335,7 @@ eru.get("/download/mediafire", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
         message: "url tidak valid",
       });
@@ -3202,6 +3356,79 @@ eru.get("/download/savefrom", async (req, res) => {
       });
     });
 });
+// sfilemobi
+eru.get("/download/sfilemobidl", async (req, res) => {
+  if (!req.query.url) {
+    res.json({
+      status: false,
+      error: "Masukan query url",
+    });
+  }
+  sfilemobiledl(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/download/sfilemobi", async (req, res) => {
+  if (!req.query.q) {
+    res.json({
+      status: false,
+      error: "Masukan query",
+    });
+  }
+  sfilemobile(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+
+eru.get("/download/stickerpackdl", async (req, res) => {
+  if (!req.query.url) {
+    res.json({
+      status: false,
+      error: "Masukan query url",
+    });
+  }
+  stickerpackdl(req.query.url)
+    .then((data) => {
+      res.json({
+        result: data,
+      });
+    })
+    .catch((err) => {
+      res.json(err);
+    });
+});
+
+eru.get("/download/stickerpack", async (req, res) => {
+  if (!req.query.q) {
+    res.json({
+      status: false,
+      error: "Masukan query",
+    });
+  }
+  stickerpack(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json(err);
+    });
+});
+
 // =============================================================END Download======================================= \\
 //===================================================================NSFW===========================================================\\
 eru.get("/h/hentai/:type", async (req, res) => {
@@ -3229,6 +3456,7 @@ eru.get("/h/irl/:type", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3243,6 +3471,7 @@ eru.get("/h/meme/:type", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3268,7 +3497,11 @@ eru.get("/h/fgo", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+        status: false,
+      });
     });
 });
 
@@ -3281,7 +3514,10 @@ eru.get("/h/genshin", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/azurlane", async (req, res) => {
@@ -3293,7 +3529,10 @@ eru.get("/h/azurlane", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/arknights", async (req, res) => {
@@ -3305,7 +3544,10 @@ eru.get("/h/arknights", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/fireemblem", async (req, res) => {
@@ -3317,7 +3559,10 @@ eru.get("/h/fireemblem", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/girlfrontline", async (req, res) => {
@@ -3329,7 +3574,10 @@ eru.get("/h/girlfrontline", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/kancolle", async (req, res) => {
@@ -3341,7 +3589,10 @@ eru.get("/h/kancolle", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
@@ -3354,7 +3605,10 @@ eru.get("/im/smug", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/rule34", async (req, res) => {
@@ -3367,7 +3621,10 @@ eru.get("/h/rule34", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 eru.get("/h/:id", async (req, res) => {
@@ -3377,16 +3634,18 @@ eru.get("/h/:id", async (req, res) => {
       const data = datas.data;
       const result = await getBuffer(data.url);
       res.setHeader("Content-Type", "image/png");
-      console.log(data.url);
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 //===================================================================End NSFW===========================================================\\
 // ===================================================================Game===========================================================\\
-eru.get("/game/tebakgame", (req, res) => {
+eru.get("/games/tebakgame", (req, res) => {
   const quote = fs.readFileSync("./lib/json/tebakgame.json");
   const datas = JSON.parse(quote);
   const result = pickRandom(datas);
@@ -3405,6 +3664,7 @@ eru.get("/games/tebakgambar", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3420,6 +3680,7 @@ eru.get("/games/asahotak", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3436,6 +3697,7 @@ eru.get("/games/caklontong", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3447,6 +3709,7 @@ eru.get("/games/family100", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3462,6 +3725,7 @@ eru.get("/games/siapakahaku", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3478,11 +3742,12 @@ eru.get("/games/susunkata", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
 
-eru.get("/games/tebakbendera2", async (req, res) => {
+eru.get("/games/tebakbendera", async (req, res) => {
   const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
   const data = JSON.parse(bendera);
   const result = pickRandom(data);
@@ -3497,6 +3762,7 @@ eru.get("/games/tebakkimia", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3513,6 +3779,7 @@ eru.get("/games/tebakkata", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3525,6 +3792,7 @@ eru.get("/games/tebaklirik", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3536,6 +3804,7 @@ eru.get("/games/tebaktebakan", async (req, res) => {
     .catch((err) => {
       res.json({
         error: err.message,
+        status: false,
       });
     });
 });
@@ -3546,6 +3815,7 @@ eru.get("/games/tekateki", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
@@ -3563,14 +3833,17 @@ eru.get("/image/sfw/:id", async (req, res) => {
       res.send(result);
     })
     .catch((err) => {
-      res.json({ error: err.message });
+      res.json({
+        status: false,
+        error: err.message,
+      });
     });
 });
 
 // Google image
 eru.get("/image/gis", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan Query" });
-  await gis(req.query.q)
+  gis(req.query.q)
     .then(async (data) => {
       const { url } = pickRandom(data);
       const result = await getBuffer(url);
@@ -3579,45 +3852,49 @@ eru.get("/image/gis", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
 });
 eru.get("/image/gis-json", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan Query" });
-  await gis(req.query.q)
+  gis(req.query.q)
     .then(async (data) => {
       const result = pickRandom(data);
       res.json(result);
     })
     .catch((err) => {
       res.json({
+        status: false,
         error: err.message,
       });
     });
 });
 eru.get("/image/artbreader", async (req, res) => {
-  if (!req.query.q) return res.send("Masukkan query");
-  await Artbreeder.search(req.query.q)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
+  if (!req.query.q) {
+    Artbreeder.random()
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((err) => {
+        res.json({
+          status: false,
+          error: err.message,
+        });
       });
-    });
-});
-eru.get("/image/artbreaders", async (req, res) => {
-  await Artbreeder.random()
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
+  } else {
+    Artbreeder.search(req.query.q)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((err) => {
+        res.json({
+          status: false,
+          error: err.message,
+        });
       });
-    });
+  }
 });
 
 // pinterest
@@ -3632,6 +3909,7 @@ eru.get("/image/pinterest", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         message: err.message,
       });
     });
@@ -3650,25 +3928,33 @@ eru.get("/image/stickerTelegram", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         message: err.message,
       });
     });
 });
 //wallpaper
 eru.get("/image/wallpaper", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan query" });
-  bt.wallpaper(req.query.q)
+  if (!req.query.q) {
+    res.json({
+      status: false,
+      error: "Masukan query",
+    });
+  }
+  wallpaper(req.query.q)
     .then(async (data) => {
-      const result = await getBuffer(pickRandom(data));
-      // res.setHeader("Content-Type", "image/png");
-      res.json(result);
+      const result = await getBuffer(data.img);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
     })
     .catch((err) => {
       res.json({
-        message: err.message,
+        status: false,
+        error: err.message,
       });
     });
 });
+
 eru.get("/image/wallpaper2", async (req, res) => {
   if (!req.query.q) return res.json({ error: "Masukan query" });
   bt.wallpaperv2(req.query.q)
@@ -3679,6 +3965,7 @@ eru.get("/image/wallpaper2", async (req, res) => {
     })
     .catch((err) => {
       res.json({
+        status: false,
         message: err.message,
       });
     });
@@ -3694,99 +3981,15 @@ eru.get("/tools/urlshort", async (req, res) => {
     if (!exist) return res.json({ error: "URL tidak valid" });
     if (check)
       return res.json({
-        link: `${process.env.Baseurl}/${check.short}`,
+        link: `${myurl}/${check.short}`,
         id: check.short,
       });
     const link = await ShortUrl.create({ full: req.query.url });
     const result = {
-      link: `${process.env.Baseurl}/${link.short}`,
+      link: `${myurl}/${link.short}`,
       id: link.short,
     };
     res.json(result);
-  }
-});
-
-eru.get("/tools/ssweb", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url" });
-  else {
-    const check = await urlExist(req.query.url);
-    if (!check) return res.json({ error: "URL tidak valid" });
-  }
-  try {
-    await new Pageres({ delay: 0, filename: "ssweb" })
-      .src(req.query.url, ["1366x768"], {
-        crop: true,
-      })
-      .dest(__path + "/tmp")
-      .run();
-    res.sendFile(__path + "/tmp/ssweb.png");
-  } catch (err) {
-    res.json({
-      error: err.message,
-    });
-  }
-});
-
-eru.get("/tools/sswebs", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url" });
-  else {
-    const check = await urlExist(req.query.url);
-    if (!check) return res.json({ error: "URL tidak valid" });
-  }
-  try {
-    await new Pageres({ delay: 0, filename: "ssweb" })
-      .src(req.query.url, ["iphone 7 plus"], {
-        crop: true,
-      })
-      .dest(__path + "/tmp")
-      .run();
-    res.sendFile(__path + "/tmp/ssweb.png");
-  } catch (err) {
-    res.json({
-      error: err.message,
-    });
-  }
-});
-
-eru.get("/tools/sswebhp", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan url" });
-  else {
-    const check = await urlExist(req.query.url);
-    if (!check) return res.json({ error: "URL tidak valid" });
-  }
-  try {
-    await new Pageres({ delay: 0, filename: "ssweb" })
-      .src(req.query.url, ["samsung galaxy note 10.1 (2014 edition) p600"], {
-        crop: true,
-      })
-      .dest(__path + "/tmp")
-      .run();
-    res.sendFile(__path + "/tmp/ssweb.png");
-  } catch (err) {
-    res.json({
-      error: err.message,
-    });
-  }
-});
-
-eru.get("/tools/shopee", async (req, res) => {
-  if (!req.query.q) return res.json({ error: "Masukan query" });
-  try {
-    await new Pageres({ delay: 3, filename: "shopee" })
-      .src(
-        `https://shopee.co.id/search?keyword=${req.query.q}`,
-        ["1920x1080"],
-        {
-          crop: true,
-        }
-      )
-      .dest(__path + "/tmp")
-      .run();
-    res.sendFile(__path + "/tmp/shopee.png");
-  } catch (err) {
-    res.json({
-      error: err.message,
-    });
   }
 });
 
@@ -3798,26 +4001,4 @@ eru.use(function (req, res) {
   res.sendFile(__path + "/views/404.html");
 });
 
-//Function dan Method
-const getBuffer = async (url, options) => {
-  try {
-    options ? options : {};
-    const res = await axios({
-      method: "get",
-      url,
-      headers: {
-        DNT: 1,
-        "Upgrade-Insecure-Request": 1,
-      },
-      ...options,
-      responseType: "arraybuffer",
-    });
-    return res.data;
-  } catch (e) {
-    console.log(`Error : ${e}`);
-  }
-};
-const pickRandom = (arr) => {
-  return arr[Math.floor(Math.random() * arr.length)];
-};
 module.exports = eru;

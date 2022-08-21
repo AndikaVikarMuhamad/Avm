@@ -4,3 +4,4 @@ backup
 .gitignore
 README.md
 db
+package-lock.json
