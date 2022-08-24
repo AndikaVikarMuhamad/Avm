@@ -1,6 +1,6 @@
 const express = require("express");
 const eru = express();
-const port = 3000;
+const port = 2000;
 const api = require("./route/api");
 const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
@@ -27,6 +27,7 @@ eru.get("/:shortUrl", async (req, res) => {
   shortUrl.save();
   res.redirect(shortUrl.full);
 });
+
 eru.use("/", (req, res) => {
   res.status(404);
   res.sendFile("views/404.html", { root: __dirname });

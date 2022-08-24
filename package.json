@@ -38,6 +38,7 @@
     "scathach-api": "^1.0.12",
     "shortid": "^2.2.16",
     "url-exist": "^2.0.2",
+    "url-pdf": "^1.0.1",
     "util": "^0.12.4",
     "yt-search": "^2.10.3",
     "ytdl-core": "^4.9.1"
