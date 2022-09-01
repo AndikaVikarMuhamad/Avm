@@ -6,6 +6,7 @@ const myurl = process.env.Baseurl;
 //All node modules
 // Main module
 const __path = process.cwd();
+const rateLimit = require("express-rate-limit");
 const axios = require("axios");
 const fs = require("fs");
 const express = require("express");
@@ -56,6 +57,52 @@ const {
   stickerpacklink,
 } = require("../lib/utils/stickerpack");
 
+// Limiter 1 menit 20 req
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 20,
+  message: {
+    status: false,
+    error: "Hmmmm kok spam",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+eru.use(limiter);
+
+// Logger
+// eru.use(async (req, res, next) => {
+
+//   const result = {
+//     id,
+//     ip: req.ip,
+//     path: req.path,
+//     query: req.query,
+//     method: req.method,
+//     useragent: req.get("User-Agent"),
+//   };
+
+// });
+eru.use(async (req, res, next) => {
+  const result = {
+    ip: req.ip,
+    path: req.path,
+    query: req.query,
+    method: req.method,
+    useragent: req.get("User-Agent"),
+  };
+  axios
+    .post("https://jean.andikavikar135.repl.co/posts", result)
+    .then((data) => {
+      console.log(data.status);
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+  next();
+});
+
 //=========================================Random===========================================\\
 // eru.get("/games/tebakbendera2", async (req, res) => {
 //   const bendera = fs.readFileSync("./lib/json/tebakbendera.json");
@@ -73,7 +120,6 @@ eru.get("/random/cerpen", async (req, res) => {
     })
     .catch((err) => {
       res.json({
-        status: false,
         error: err.message,
       });
     });
@@ -2253,7 +2299,7 @@ eru.get("/canvas/tweet", async (req, res) => {
         error: "Masukan url foto",
       });
     const tweet = await new fietu.Tweet()
-      .setAvatar(req.query.avatar)
+      .setAvatar(encodeURIComponent(req.query.avatar))
       .setUsername(req.query.name)
       .setNickname(req.query.name)
       .setText(req.query.text)
@@ -2751,7 +2797,7 @@ eru.get("/canvas/welcome", async (req, res) => {
     return res.json({ status: false, error: "Masukan query yang benar" });
   try {
     const welcome = await new canvafy.WelcomeLeave()
-      .setAvatar(req.query.avatar)
+      .setAvatar(encodeURIComponent(req.query.avatar))
       .setBackground(
         "image",
         "https://img.freepik.com/premium-vector/pixel-art-lake-house-wallpaper-with-wooden-deck-trees-8bit-background_360488-394.jpg?w=2000"
@@ -3998,6 +4044,7 @@ eru.get("/tools/urlshort", async (req, res) => {
 eru.use(express.static(__path + "/public"));
 eru.use(function (req, res) {
   res.status(404);
+
   res.sendFile(__path + "/views/404.html");
 });
 
