@@ -14,7 +14,6 @@ const eru = express.Router();
 const canvafy = require("canvafy");
 
 //external module
-const ytdl = require("ytdl-core");
 const yts = require("yt-search");
 const { promisify } = require("util");
 const thiccysapi = require("@phaticusthiccy/open-apis");
@@ -41,14 +40,17 @@ const reddit = new Cabul();
 const ShortUrl = require("../lib/utils/short");
 const cerpen = require("../lib/utils/cerpen");
 const attp = require("../lib/utils/attp");
-const otakudesu = require("../lib/utils/otakudesu");
+const { otakudesu, otakudesudl } = require("../lib/utils/otakudesu");
 const mediafire = require("../lib/utils/mediafire");
 const komiku = require("../lib/utils/komiku");
 const adikfilm = require("../lib/utils/adikfilm");
 const kuyhaa = require("../lib/utils/kuyhaa");
 const doujindesu = require("../lib/utils/doujindesu");
 const chara = require("../lib/utils/chara");
-const wallpaper = require("../lib/utils/wallpaper");
+const { wallhaven } = require("../lib/utils/wallpaper");
+const igstalk = require("../lib/utils/igstalk");
+const { getNhentai, getRandom } = require("../lib/utils/nhentai");
+const { tiktokdl, tiktokdlv4, tiktokdlv3 } = require("../lib/utils/tiktokdl");
 const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
 const {
@@ -57,10 +59,10 @@ const {
   stickerpacklink,
 } = require("../lib/utils/stickerpack");
 
-// Limiter 1 menit 20 req
+// Limiter 1 menit 100 req
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 20,
+  max: 100,
   message: {
     status: false,
     error: "Hmmmm kok spam",
@@ -71,36 +73,29 @@ const limiter = rateLimit({
 
 eru.use(limiter);
 
-// Logger
-// eru.use(async (req, res, next) => {
-
-//   const result = {
-//     id,
-//     ip: req.ip,
-//     path: req.path,
-//     query: req.query,
-//     method: req.method,
-//     useragent: req.get("User-Agent"),
-//   };
-
-// });
 eru.use(async (req, res, next) => {
-  const result = {
-    ip: req.ip,
-    path: req.path,
-    query: req.query,
-    method: req.method,
-    useragent: req.get("User-Agent"),
-  };
-  axios
-    .post("https://jean.andikavikar135.repl.co/posts", result)
-    .then((data) => {
-      console.log(data.status);
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
-  next();
+  try {
+    const { data } = await axios.get("https://ipapi.co/json/");
+    const result = {
+      ip: data.ip,
+      path: req.path,
+      query: req.query,
+      method: req.method,
+      useragent: req.get("User-Agent"),
+    };
+    axios
+      .post("https://jean.andikavikar135.repl.co/posts", result)
+      .then((data) => {
+        console.log(data.status);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+    next();
+  } catch (err) {
+    console.log(err.message);
+    next();
+  }
 });
 
 //=========================================Random===========================================\\
@@ -134,7 +129,7 @@ eru.get("/random/quotes", (req, res) => {
     quotes: result.quotes,
   });
 });
-eru.get("/tes", (req, res) => {});
+
 // =======================================================Sementara==========================================================
 
 eru.get("/anime/wait", async (req, res) => {
@@ -241,6 +236,24 @@ eru.get("/information/otakudesu", async (req, res) => {
     });
   otakudesu(req.query.q)
     .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/otakudesudl", async (req, res) => {
+  if (!req.query.url)
+    return res.json({
+      status: false,
+      error: "Masukan querynya",
+    });
+  otakudesudl(req.query.url)
+    .then((data) => {
+      console.log(data);
       res.json(data);
     })
     .catch((err) => {
@@ -492,30 +505,18 @@ eru.get("/information/gitstalk2", async (req, res) => {
 });
 
 eru.get("/information/igstalk", async (req, res) => {
-  thiccysapi
-    .insta_profile("levi.std")
+  if (!req.query.username)
+    return res.json({ status: false, error: "Masukan username" });
+  igstalk(req.query.username)
     .then((data) => {
-      if (!req.query.name)
-        return res.json({ status: false, error: "Masukan username" });
-      const result = data.map((item) => {
-        return {
-          Name: item.username,
-          Image: item.profile_pic_url,
-          Followers: item.followers,
-          Following: item.following,
-          Post: item.post_count,
-        };
-      });
-      if (!result.length)
-        return res.json({ status: false, error: "User tidak ditemukan" });
       res.json(data);
     })
     .catch((err) => {
       res.json({
         status: false,
         error: err.message,
+        message: "Profile private atau tidak pernah ada",
       });
-      console.log(err);
     });
 });
 //brainly
@@ -664,17 +665,17 @@ eru.get("/information/playstore", async (req, res) => {
       num: 2,
     })
     .then((data) => {
-      result = data.map((item) => {
-        return {
-          Title: item.title,
-          Developer: item.developer,
-          appId: item.appId,
-          price: item.price,
-          icon: item.icon,
-          score: item.score,
-        };
-      });
-      res.json(result);
+      // result = data.map((item) => {
+      //   return {
+      //     Title: item.title,
+      //     Developer: item.developer,
+      //     appId: item.appId,
+      //     price: item.price,
+      //     icon: item.icon,
+      //     score: item.score,
+      //   };
+      // });
+      res.json(data);
     })
     .catch((err) => {
       res.json({
@@ -3080,35 +3081,17 @@ eru.get("/canvas/burn", async (req, res) => {
 });
 //===================================================Download===================================================\\
 // yt
-eru.get("/download/ytmp3", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "URL tidak ada" });
-  await ytdl
-    .getInfo(req.query.url)
+// eru.get("/download/ytm2", async (req, res) => {
+//   let info = await ytdl.getInfo("https://www.youtube.com/watch?v=8l14WXHJx1Y");
+//   let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
+//   console.log("Formats with only audio: " + audioFormats.length);
+//   res.json(audioFormats);
+// });
+eru.get("/download/ytmp3", (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  bt.youtubedlv2(req.query.url)
     .then((data) => {
-      const datas = data.formats;
-      const title =
-        data.player_response.microformat.playerMicroformatRenderer.title
-          .simpleText;
-      const channel =
-        data.player_response.microformat.playerMicroformatRenderer
-          .ownerChannelName;
-      const thumb =
-        data.player_response.microformat.playerMicroformatRenderer.thumbnail
-          .thumbnails[0].url;
-      const audio = [];
-      for (let i = 0; i < datas.length; i++) {
-        if (datas[i].mimeType == 'audio/webm; codecs="opus"') {
-          let aud = datas[i];
-          audio.push(aud.url);
-        }
-      }
-      const result = {
-        title,
-        channel,
-        thumb,
-        url: audio[1],
-      };
-      res.json(result);
+      res.json(data);
     })
     .catch((err) => {
       res.json({
@@ -3116,56 +3099,8 @@ eru.get("/download/ytmp3", async (req, res) => {
         error: err.message,
       });
     });
-});
-eru.get("/download/ytm2", async (req, res) => {
-  let info = await ytdl.getInfo("https://www.youtube.com/watch?v=8l14WXHJx1Y");
-  let audioFormats = ytdl.filterFormats(info.formats, "audioonly");
-  console.log("Formats with only audio: " + audioFormats.length);
-  res.json(audioFormats);
 });
 eru.get("/download/ytmp4", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "URL tidak ada" });
-  await ytdl
-    .getInfo(req.query.url)
-    .then(async (data) => {
-      const datas = data.formats;
-      const title =
-        data.player_response.microformat.playerMicroformatRenderer.title
-          .simpleText;
-      const thumb =
-        data.player_response.microformat.playerMicroformatRenderer.thumbnail
-          .thumbnails[0].url;
-      const channel =
-        data.player_response.microformat.playerMicroformatRenderer
-          .ownerChannelName;
-      const video = [];
-      for (let i = 0; i < datas.length; i++) {
-        if (
-          datas[i].container == "mp4" &&
-          datas[i].hasVideo == true &&
-          datas[i].hasAudio == true
-        ) {
-          let vid = datas[i];
-          video.push(vid.url);
-        }
-      }
-      const vid = video[0];
-      const result = {
-        title,
-        channel,
-        thumb,
-        video: vid,
-      };
-      res.json(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/download/ytmp4-2", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Masukan URL" });
   thiccysapi
     .insta_post(req.query.url)
@@ -3181,33 +3116,10 @@ eru.get("/download/ytmp4-2", async (req, res) => {
 });
 eru.get("/download/play", async (req, res) => {
   if (!req.query.q) return res.json({ error: "No query" });
-  await yts(req.query.q)
+  yts(req.query.q)
     .then(async (data) => {
       const url = data.videos[0].url;
-      const video = await ytdl.getInfo(url);
-      const datas = video.formats;
-      const thumb =
-        video.player_response.microformat.playerMicroformatRenderer.thumbnail
-          .thumbnails[0].url;
-      const title =
-        video.player_response.microformat.playerMicroformatRenderer.title
-          .simpleText;
-      const channel =
-        video.player_response.microformat.playerMicroformatRenderer
-          .ownerChannelName;
-      const audio = [];
-      for (let i = 0; i < datas.length; i++) {
-        if (datas[i].mimeType == 'audio/webm; codecs="opus"') {
-          const aud = datas[i];
-          audio.push(aud.url);
-        }
-      }
-      const result = {
-        title,
-        channel,
-        thumb,
-        url: audio[1],
-      };
+      const result = await thiccysapi.insta_post(url);
       res.json(result);
     })
     .catch((err) => {
@@ -3219,37 +3131,10 @@ eru.get("/download/play", async (req, res) => {
 });
 eru.get("/download/playmp4", async (req, res) => {
   if (!req.query.q) return res.json({ error: "No query" });
-  await yts(req.query.q)
+  yts(req.query.q)
     .then(async (data) => {
       const url = data.videos[0].url;
-      const mp4 = await ytdl.getInfo(url);
-      const datas = mp4.formats;
-      const title =
-        mp4.player_response.microformat.playerMicroformatRenderer.title
-          .simpleText;
-      const thumb =
-        mp4.player_response.microformat.playerMicroformatRenderer.thumbnail
-          .thumbnails[0].url;
-      const channel =
-        mp4.player_response.microformat.playerMicroformatRenderer
-          .ownerChannelName;
-      const video = [];
-      for (let i = 0; i < datas.length; i++) {
-        if (
-          datas[i].container == "mp4" &&
-          datas[i].hasVideo == true &&
-          datas[i].hasAudio == true
-        ) {
-          const vid = datas[i];
-          video.push(vid.url);
-        }
-      }
-      const result = {
-        title,
-        channel,
-        thumb,
-        url: video[0],
-      };
+      const result = await thiccysapi.insta_post(url);
       res.json(result);
     })
     .catch((err) => {
@@ -3259,7 +3144,7 @@ eru.get("/download/playmp4", async (req, res) => {
       });
     });
 });
-
+/*
 // tiktok
 eru.get("/download/tiktok", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Masukan URL" });
@@ -3290,6 +3175,52 @@ eru.get("/download/tiktok3", async (req, res) => {
       });
     });
 });
+*/
+eru.get("/download/tiktok", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  tiktokdlv3(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((_) => {
+      tiktokdl(req.query.url)
+        .then((data) => {
+          res.json(data);
+        })
+        .catch((err) => {
+          res.json({
+            status: false,
+            error: err.message,
+          });
+        });
+    });
+});
+eru.get("/download/tiktokv2", async (req, res) => {
+  if (!req.query.url) return res.json({ error: "Masukan URL" });
+  tiktokdlv4(req.query.url)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+// eru.get("/download/tiktok", async (req, res) => {
+//   if (!req.query.url) return res.json({ error: "Masukan URL" });
+//   tiktokdl(req.query.url)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((err) => {
+//       res.json({
+//         status: false,
+//         error: err.message,
+//       });
+//     });
+// });
 // ig
 eru.get("/download/ig", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Masukan URL" });
@@ -3306,19 +3237,6 @@ eru.get("/download/ig", async (req, res) => {
     });
 });
 
-eru.get("/download/ig2", async (req, res) => {
-  if (!req.query.url) return res.json({ error: "Masukan URL" });
-  bt.instagramdl(req.query.url)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
 eru.get("/download/igstory", async (req, res) => {
   if (!req.query.name) return res.json({ error: "Masukan username" });
   bt.instagramStory(req.query.name)
@@ -3352,9 +3270,6 @@ eru.get("/download/igstory2", async (req, res) => {
         error: err.message,
       });
     });
-});
-eru.get("/download/igstory3", async (req, res) => {
-  if (!req.query.name) return res.json({ error: "Masukan username" });
 });
 
 // fb
@@ -3396,10 +3311,17 @@ eru.get("/download/savefrom", async (req, res) => {
       res.json(data);
     })
     .catch((err) => {
-      res.json({
-        error: "url tidak valid",
-        message: err.message,
-      });
+      bt.aiovideodl(req.query.url)
+        .then((data) => {
+          res.json(data);
+        })
+        .catch((err) => {
+          res.json({
+            status: false,
+            error: "url tidak valid",
+            message: err.message,
+          });
+        });
     });
 });
 // sfilemobi
@@ -3477,6 +3399,22 @@ eru.get("/download/stickerpack", async (req, res) => {
 
 // =============================================================END Download======================================= \\
 //===================================================================NSFW===========================================================\\
+
+eru.get("/h/nhentai", (req, res) => {
+  if (!req.query.code || isNaN(req.query.code) || req.query.code.length > 6)
+    return res.json({ status: false, error: "Format salah" });
+  getNhentai(req.query.code)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+
 eru.get("/h/hentai/:type", async (req, res) => {
   reddit
     .hentai(req.params.type, "hot")
@@ -3526,25 +3464,31 @@ eru.get("/h/hololive", async (req, res) => {
   hentai
     .getHololive()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
     .catch((err) => {
-      res.sendStatus(500).json({ error: err.message });
+      res.json({
+        error: err.message,
+        status: false,
+      });
     });
 });
 eru.get("/h/fgo", async (req, res) => {
   hentai
     .getFgo()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
     .catch((err) => {
       res.json({
-        status: false,
         error: err.message,
         status: false,
       });
@@ -3555,7 +3499,9 @@ eru.get("/h/genshin", async (req, res) => {
   hentai
     .getGenshin()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3570,7 +3516,9 @@ eru.get("/h/azurlane", async (req, res) => {
   hentai
     .getAzur()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3585,7 +3533,9 @@ eru.get("/h/arknights", async (req, res) => {
   hentai
     .getArknights()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3600,7 +3550,9 @@ eru.get("/h/fireemblem", async (req, res) => {
   hentai
     .getFireEmblem()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3615,7 +3567,9 @@ eru.get("/h/girlfrontline", async (req, res) => {
   hentai
     .getGirlsFrontline()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3630,7 +3584,9 @@ eru.get("/h/kancolle", async (req, res) => {
   hentai
     .getKancolle()
     .then(async (data) => {
-      const result = await getBuffer(data.image);
+      const result = await getBuffer(
+        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
+      );
       res.setHeader("Content-Type", "image/png");
       res.send(result);
     })
@@ -3661,7 +3617,7 @@ eru.get("/h/rule34", async (req, res) => {
   hentai
     .searchR34(req.query.q)
     .then(async (data) => {
-      image = pickRandom(data.clean_image);
+      const image = pickRandom(data.clean_image);
       const result = await getBuffer(image);
       res.setHeader("Content-Type", "image/png");
       res.send(result);
@@ -3673,7 +3629,7 @@ eru.get("/h/rule34", async (req, res) => {
       });
     });
 });
-eru.get("/h/:id", async (req, res) => {
+eru.get("/he/:id", async (req, res) => {
   axios
     .get(`https://api.waifu.pics/nsfw/${req.params.id}`)
     .then(async (datas) => {
@@ -3987,7 +3943,7 @@ eru.get("/image/wallpaper", async (req, res) => {
       error: "Masukan query",
     });
   }
-  wallpaper(req.query.q)
+  wallhaven(req.query.q)
     .then(async (data) => {
       const result = await getBuffer(data.img);
       res.setHeader("Content-Type", "image/png");

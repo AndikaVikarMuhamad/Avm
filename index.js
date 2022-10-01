@@ -1,6 +1,6 @@
 const express = require("express");
 const eru = express();
-const port = 2000;
+const port = 3000;
 const api = require("./route/api");
 const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
@@ -9,7 +9,7 @@ eru.use(express.static(__dirname + "/public"));
 eru.use("/api", api);
 eru.use("/short", short);
 
-//     Landing page
+// Landing page
 
 eru.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/landing.html");
