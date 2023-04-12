@@ -1,7 +1,4 @@
 // Config
-const dotenv = require("dotenv");
-dotenv.config();
-const myurl = process.env.Baseurl;
 
 //All node modules
 // Main module
@@ -24,8 +21,7 @@ const brain = new Brainly("id");
 const Gis = require("g-i-s");
 const gis = promisify(Gis);
 const malScraper = require("mal-scraper");
-const Scathach = require("scathach-api");
-const hentai = new Scathach();
+
 const gplay = require("google-play-scraper");
 const knights = require("knights-canvas");
 const DIG = require("discord-image-generation");
@@ -53,6 +49,8 @@ const { getNhentai, getRandom } = require("../lib/utils/nhentai");
 const { tiktokdl, tiktokdlv4, tiktokdlv3 } = require("../lib/utils/tiktokdl");
 const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
+const r34 = require("../lib/utils/r34");
+const danbooru = require("../lib/utils/danbooru");
 const {
   stickerpack,
   stickerpackdl,
@@ -3460,175 +3458,6 @@ eru.get("/h/meme/:type", async (req, res) => {
     });
 });
 
-eru.get("/h/hololive", async (req, res) => {
-  hentai
-    .getHololive()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-        status: false,
-      });
-    });
-});
-eru.get("/h/fgo", async (req, res) => {
-  hentai
-    .getFgo()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-        status: false,
-      });
-    });
-});
-
-eru.get("/h/genshin", async (req, res) => {
-  hentai
-    .getGenshin()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/azurlane", async (req, res) => {
-  hentai
-    .getAzur()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/arknights", async (req, res) => {
-  hentai
-    .getArknights()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/fireemblem", async (req, res) => {
-  hentai
-    .getFireEmblem()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/girlfrontline", async (req, res) => {
-  hentai
-    .getGirlsFrontline()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/kancolle", async (req, res) => {
-  hentai
-    .getKancolle()
-    .then(async (data) => {
-      const result = await getBuffer(
-        `https://external-content.duckduckgo.com/iu/?u=${data.image}`
-      );
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-
-eru.get("/im/smug", async (req, res) => {
-  hentai
-    .getReaction("smug")
-    .then(async (data) => {
-      const result = await getBuffer(data.url);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/rule34", async (req, res) => {
-  hentai
-    .searchR34(req.query.q)
-    .then(async (data) => {
-      const image = pickRandom(data.clean_image);
-      const result = await getBuffer(image);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
 eru.get("/he/:id", async (req, res) => {
   axios
     .get(`https://api.waifu.pics/nsfw/${req.params.id}`)
@@ -3645,6 +3474,46 @@ eru.get("/he/:id", async (req, res) => {
       });
     });
 });
+
+eru.get("/h/rule34", (req, res) => {
+  if (!req.query.tags) {
+    res.json({
+      status: false,
+      error: "Kenapa coba",
+    });
+  }
+  r34(req.query.tags, req.query.rating)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+eru.get("/h/img/:tags", (req, res) => {
+  if (!req.params.tags) {
+    res.json({
+      status: false,
+      error: "Missing Params",
+    });
+  }
+  danbooru(req.params.tags, req.query.rating)
+    .then(async (data) => {
+      const result = await getBuffer(data.img);
+      res.setHeader("Content-Type", "image/png");
+      res.send(result);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+
 //===================================================================End NSFW===========================================================\\
 // ===================================================================Game===========================================================\\
 eru.get("/games/tebakgame", (req, res) => {
@@ -3983,12 +3852,12 @@ eru.get("/tools/urlshort", async (req, res) => {
     if (!exist) return res.json({ error: "URL tidak valid" });
     if (check)
       return res.json({
-        link: `${myurl}/${check.short}`,
+        link: `https://${req.get("host")}/${check.short}`,
         id: check.short,
       });
     const link = await ShortUrl.create({ full: req.query.url });
     const result = {
-      link: `${myurl}/${link.short}`,
+      link: `https://${req.get("host")}/${link.short}`,
       id: link.short,
     };
     res.json(result);

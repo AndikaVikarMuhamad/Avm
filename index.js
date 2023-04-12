@@ -17,6 +17,7 @@ eru.get("/", (req, res) => {
 // docs
 eru.get("/docs", (req, res) => {
   res.sendFile("views/docs.html", { root: __dirname });
+  console.log(req.get("host"));
 });
 
 // 404
@@ -34,5 +35,5 @@ eru.use("/", (req, res) => {
 });
 
 eru.listen(port, () => {
-  console.log(`Online on port ${port}`);
+  console.log(`Online on localhost:${port}`);
 }).keepAliveTimeout = 61 * 1000;
