@@ -264,13 +264,13 @@ eru.get("/information/otakudesudl", async (req, res) => {
 
 // yt
 
-eru.get("/information/yts", async (req, res) => {
+eru.get("/information/yts", (req, res) => {
   if (!req.query.q)
     return res.json({
       status: false,
       Error: "Masukan Query",
     });
-  await yts(req.query.q)
+  yts(req.query.q)
     .then((data) => {
       const videos = data.videos.slice();
       const result = videos.map((item) => {
@@ -281,6 +281,7 @@ eru.get("/information/yts", async (req, res) => {
           Duration: item.duration.timestamp,
           Publish: item.ago,
           Thumbnail: item.thumbnail,
+          url: item.url,
         };
       });
       res.json(result);
