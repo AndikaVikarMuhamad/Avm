@@ -21,7 +21,6 @@ const brain = new Brainly("id");
 const Gis = require("g-i-s");
 const gis = promisify(Gis);
 const malScraper = require("mal-scraper");
-
 const gplay = require("google-play-scraper");
 const knights = require("knights-canvas");
 const DIG = require("discord-image-generation");
@@ -49,13 +48,15 @@ const { getNhentai, getRandom } = require("../lib/utils/nhentai");
 const { tiktokdl, tiktokdlv4, tiktokdlv3 } = require("../lib/utils/tiktokdl");
 const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
-const r34 = require("../lib/utils/r34");
-const danbooru = require("../lib/utils/danbooru");
+const { danbooru, r34 } = require("../lib/utils/nsfw");
+const konachan = require("../lib/utils/konachan");
 const {
   stickerpack,
   stickerpackdl,
   stickerpacklink,
 } = require("../lib/utils/stickerpack");
+const cors = require("cors");
+eru.use(cors());
 
 // Limiter 1 menit 100 req
 const limiter = rateLimit({
@@ -87,7 +88,7 @@ eru.use(async (req, res, next) => {
         console.log(data.status);
       })
       .catch((err) => {
-        console.log(err.message);
+        console.log("apa sih");
       });
     next();
   } catch (err) {
@@ -133,7 +134,8 @@ eru.get("/random/quotes", (req, res) => {
 eru.get("/anime/wait", async (req, res) => {
   if (!req.query.url)
     return res.json({
-      error: "URL tidak ditemukan",
+      status: false,
+      error: "Masukan url",
     });
   axios
     .get(`https://api.trace.moe/search?anilistInfo&url=${req.query.url}`)
@@ -154,7 +156,6 @@ eru.get("/anime/wait", async (req, res) => {
       res.json({
         status: false,
         error: err.message,
-        message: "URL tidak ditemukan",
       });
     });
 });
@@ -275,12 +276,12 @@ eru.get("/information/yts", (req, res) => {
       const videos = data.videos.slice();
       const result = videos.map((item) => {
         return {
-          Title: item.title,
-          Views: item.views,
-          Author: item.author.name,
-          Duration: item.duration.timestamp,
-          Publish: item.ago,
-          Thumbnail: item.thumbnail,
+          title: item.title,
+          views: item.views,
+          author: item.author.name,
+          duration: item.duration.timestamp,
+          publish: item.ago,
+          thumbnail: item.thumbnail,
           url: item.url,
         };
       });
@@ -3843,6 +3844,24 @@ eru.get("/image/wallpaper2", async (req, res) => {
     });
 });
 
+eru.get("/image/konachan", (req, res) => {
+  if (!req.query.tags) {
+    res.json({
+      status: false,
+      message: "Masukan query tags",
+    });
+  }
+  konachan(req.query.tags)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        message: err.message,
+      });
+    });
+});
 //===============================================End Random Image=============================\\
 //===============================================Tools=======================================\\
 eru.get("/tools/urlshort", async (req, res) => {
@@ -3870,7 +3889,6 @@ eru.get("/tools/urlshort", async (req, res) => {
 eru.use(express.static(__path + "/public"));
 eru.use(function (req, res) {
   res.status(404);
-
   res.sendFile(__path + "/views/404.html");
 });
 

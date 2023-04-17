@@ -4,6 +4,7 @@ const port = 3000;
 const api = require("./route/api");
 const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
+const cors = require("cors");
 
 eru.use(express.static(__dirname + "/public"));
 eru.use("/api", api);
@@ -20,6 +21,7 @@ eru.get("/docs", (req, res) => {
   console.log(req.get("host"));
 });
 
+eru.use(cors());
 // 404
 
 eru.get("/:shortUrl", async (req, res) => {
