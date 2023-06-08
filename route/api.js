@@ -28,8 +28,6 @@ const fietu = require("fietu");
 const { CanvasSenpai } = require("canvas-senpai");
 const canva = new CanvasSenpai();
 const urlExist = require("url-exist");
-const { Cabul } = require("cabul");
-const reddit = new Cabul();
 
 // My scraper
 const ShortUrl = require("../lib/utils/short");
@@ -44,7 +42,7 @@ const doujindesu = require("../lib/utils/doujindesu");
 const chara = require("../lib/utils/chara");
 const { wallhaven } = require("../lib/utils/wallpaper");
 const igstalk = require("../lib/utils/igstalk");
-const { getNhentai, getRandom } = require("../lib/utils/nhentai");
+const { nhentai, getRandom } = require("../lib/utils/nhentai");
 const { tiktokdl, tiktokdlv4, tiktokdlv3 } = require("../lib/utils/tiktokdl");
 const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
@@ -3400,66 +3398,6 @@ eru.get("/download/stickerpack", async (req, res) => {
 // =============================================================END Download======================================= \\
 //===================================================================NSFW===========================================================\\
 
-eru.get("/h/nhentai", (req, res) => {
-  if (!req.query.code || isNaN(req.query.code) || req.query.code.length > 6)
-    return res.json({ status: false, error: "Format salah" });
-  getNhentai(req.query.code)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.json({
-        status: false,
-        error: err.message,
-      });
-    });
-});
-
-eru.get("/h/hentai/:type", async (req, res) => {
-  reddit
-    .hentai(req.params.type, "hot")
-    .then(async (data) => {
-      const result = await getBuffer(data.data.url);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-      });
-    });
-});
-eru.get("/h/irl/:type", async (req, res) => {
-  reddit
-    .irl(req.params.type, "hot")
-    .then(async (data) => {
-      const result = await getBuffer(data.data.url);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-        status: false,
-      });
-    });
-});
-eru.get("/h/meme/:type", async (req, res) => {
-  reddit
-    .meme(req.params.type, "hot")
-    .then(async (data) => {
-      const result = await getBuffer(data.data.url);
-      res.setHeader("Content-Type", "image/png");
-      res.send(result);
-    })
-    .catch((err) => {
-      res.json({
-        error: err.message,
-        status: false,
-      });
-    });
-});
-
 eru.get("/he/:id", async (req, res) => {
   axios
     .get(`https://api.waifu.pics/nsfw/${req.params.id}`)
@@ -3515,7 +3453,25 @@ eru.get("/h/img/:tags", (req, res) => {
       });
     });
 });
-
+eru.get("/h/nhentai", (req, res) => {
+  if (!req.query.code) {
+    getRandom()
+      .then((result) => {
+        res.json(result);
+      })
+      .catch((err) => {
+        res.json(err);
+      });
+  } else {
+    nhentai(req.query.code)
+      .then((result) => {
+        res.json(result);
+      })
+      .catch((err) => {
+        res.json(err);
+      });
+  }
+});
 //===================================================================End NSFW===========================================================\\
 // ===================================================================Game===========================================================\\
 eru.get("/games/tebakgame", (req, res) => {

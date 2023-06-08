@@ -17,9 +17,8 @@
     "@phaticusthiccy/open-apis": "^1.8.5",
     "axios": "^0.27.2",
     "brainly-scraper-v2": "^2.0.13",
-    "cabul": "^0.0.22",
     "canvafy": "^2.1.0",
-    "canvas": "^2.11.0",
+    "canvas": "^2.11.2",
     "canvas-senpai": "^2.0.3",
     "cherio": "^1.0.0-rc.2",
     "cors": "^2.8.5",
@@ -35,11 +34,9 @@
     "knights-canvas": "^1.3.7-a",
     "mal-scraper": "^2.11.4",
     "mongoose": "^6.5.1",
-    "node": "^16.0.0",
     "request": "^2.88.2",
     "shortid": "^2.2.16",
     "url-exist": "^2.0.2",
-    "url-pdf": "^1.0.1",
     "util": "^0.12.4",
     "yt-search": "^2.10.3"
   }
