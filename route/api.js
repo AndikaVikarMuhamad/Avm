@@ -10,7 +10,7 @@ const express = require("express");
 const eru = express.Router();
 const canvafy = require("canvafy");
 
-//external module
+//add-ons module
 const yts = require("yt-search");
 const { promisify } = require("util");
 const thiccysapi = require("@phaticusthiccy/open-apis");
@@ -48,6 +48,11 @@ const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
 const { danbooru, r34 } = require("../lib/utils/nsfw");
 const konachan = require("../lib/utils/konachan");
+const {
+  doujinkudetail,
+  doujinkudl,
+  doujinkusearch,
+} = require("../lib/utils/doujinku");
 const {
   stickerpack,
   stickerpackdl,
@@ -778,6 +783,33 @@ eru.get("/information/komiku", async (req, res) => {
 eru.get("/information/doujindesu", async (req, res) => {
   if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
   doujindesu(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/doujinku", async (req, res) => {
+  if (!req.query.q) return res.json({ status: false, error: "Masukan Query" });
+  doujinkusearch(req.query.q)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.json({
+        status: false,
+        error: err.message,
+      });
+    });
+});
+eru.get("/information/doujinkudetail", async (req, res) => {
+  if (!req.query.url)
+    return res.json({ status: false, error: "Masukan Query" });
+  doujinkudetail(req.query.url)
     .then((data) => {
       res.json(data);
     })
@@ -3394,6 +3426,32 @@ eru.get("/download/stickerpack", async (req, res) => {
       res.json(err);
     });
 });
+eru.get("/download/doujinkudl", async (req, res) => {
+  if (!req.query.url) {
+    res.json({
+      status: false,
+      error: "Masukan url",
+    });
+  } else {
+    const regex = /^https?:\/\/(?:www\.)?doujinku\.co(?:\/[^\s]*)?$/;
+    if (regex.test(req.query.url)) {
+      doujinkudl(req.query.url)
+        .then((data) => {
+          res.json(data[0]);
+        })
+        .catch((err) => {
+          res.json(err);
+        });
+    } else {
+      res
+        .json({
+          status: false,
+          message: "Not found",
+        })
+        .statusCode(404);
+    }
+  }
+});
 
 // =============================================================END Download======================================= \\
 //===================================================================NSFW===========================================================\\
@@ -3433,6 +3491,7 @@ eru.get("/h/rule34", (req, res) => {
       });
     });
 });
+
 eru.get("/h/img/:tags", (req, res) => {
   if (!req.params.tags) {
     res.json({
@@ -3453,6 +3512,7 @@ eru.get("/h/img/:tags", (req, res) => {
       });
     });
 });
+
 eru.get("/h/nhentai", (req, res) => {
   if (!req.query.code) {
     getRandom()
