@@ -1,6 +1,6 @@
 const express = require("express");
 const eru = express();
-const port = 3000;
+const port = 3000 || 3001;
 const api = require("./route/api");
 const ShortUrl = require("./lib/utils/short");
 const short = require("./route/short");
