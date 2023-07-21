@@ -43,7 +43,7 @@ const chara = require("../lib/utils/chara");
 const { wallhaven } = require("../lib/utils/wallpaper");
 const igstalk = require("../lib/utils/igstalk");
 const { nhentai, getRandom } = require("../lib/utils/nhentai");
-const { tiktokdl, tiktokdlv4, tiktokdlv3 } = require("../lib/utils/tiktokdl");
+const { tiktokdl, tiktokdlv2, tiktokdlv3 } = require("../lib/utils/tiktokdl");
 const { sfilemobile, sfilemobiledl } = require("../lib/utils/sfilemobile");
 const { pickRandom, getBuffer, search } = require("../lib/utils/allfunc");
 const { danbooru, r34 } = require("../lib/utils/nsfw");
@@ -3227,7 +3227,7 @@ eru.get("/download/tiktok", async (req, res) => {
 });
 eru.get("/download/tiktokv2", async (req, res) => {
   if (!req.query.url) return res.json({ error: "Masukan URL" });
-  tiktokdlv4(req.query.url)
+  tiktokdlv2(req.query.url)
     .then((data) => {
       res.json(data);
     })
