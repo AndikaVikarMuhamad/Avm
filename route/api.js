@@ -3437,7 +3437,7 @@ eru.get("/download/doujinkudl", async (req, res) => {
     if (regex.test(req.query.url)) {
       doujinkudl(req.query.url)
         .then((data) => {
-          res.json(data[0]);
+          res.json(data.img[0]);
         })
         .catch((err) => {
           res.json(err);
